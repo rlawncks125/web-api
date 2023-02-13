@@ -4,3 +4,7 @@
 
 *.yml
 nginx.*
+
+
+certbot
+certbot/**
