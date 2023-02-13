@@ -50,12 +50,6 @@
     </style>
   </head>
   <body>
-    <p>
-      Chrome같은 일부 브라우저는 음성 인식을 사용할떄 서버 기반 인식 엔지이
-      필요하기때문에. 오디오가 인식처리를 위해 웹서비스로 전성되므로
-      오프라인에서 작동하지 않음
-    </p>
-    <p>엣지 에서는 작동확인함</p>
     <h1>Speech color changer</h1>
 
     <p class="hints"></p>
@@ -132,8 +126,9 @@
         speechRecognitionList.addFromString(grammar, 1);
         recognition.grammars = speechRecognitionList;
       }
-      recognition.continuous = false;
-      recognition.lang = "en-US";
+      // 끊지않고 계속 음성을 인식할지
+      recognition.continuous = true;
+      recognition.lang = "ko-KR";
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
 
@@ -166,12 +161,16 @@
         // These also have getters so they can be accessed like arrays.
         // The second [0] returns the SpeechRecognitionAlternative at position 0.
         // We then return the transcript property of the SpeechRecognitionAlternative object
-        const color = event.results[0][0].transcript;
-        diagnostic.textContent = "Result received: " + color + ".";
-        // bg.style.backgroundColor = color;
-        bg.style.backgroundColor = color.split(".")[0];
-        console.log("color: " + color);
+        const text = event.results[0][0].transcript;
+        diagnostic.textContent = "Result received: " + text + ".";
+        bg.style.backgroundColor = text.split(".")[0];
+        console.log("text: " + text.replaceAll(" ", ""));
         console.log("Confidence: " + event.results[0][0].confidence);
+
+        if (/그만멈춰/i.test(text.replaceAll(" ", ""))) {
+          console.log("그만 정지");
+          recognition.stop();
+        }
       };
 
       // 음성이 검출되지 않을떄 발생
@@ -187,6 +186,8 @@
         diagnostic.textContent =
           "Error occurred in recognition: " + event.error;
       };
+
+      // recognition.start();
     </script>
   </body>
 </html>
