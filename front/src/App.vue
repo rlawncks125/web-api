@@ -13,6 +13,7 @@ import { RouterLink, RouterView } from "vue-router";
         <RouterLink to="/">Home</RouterLink>
         <RouterLink to="/speech">Speech</RouterLink>
         <RouterLink to="/draganddrop">Drag and Drop</RouterLink>
+        <RouterLink to="/webRPC">Web RPC</RouterLink>
       </nav>
     </div>
   </header>
