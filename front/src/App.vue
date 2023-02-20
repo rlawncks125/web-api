@@ -14,6 +14,7 @@ import { RouterLink, RouterView } from "vue-router";
         <RouterLink to="/speech">Speech</RouterLink>
         <RouterLink to="/draganddrop">Drag and Drop</RouterLink>
         <RouterLink to="/webRPC">Web RPC</RouterLink>
+        <RouterLink to="/share">Share</RouterLink>
       </nav>
     </div>
   </header>

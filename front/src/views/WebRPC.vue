@@ -37,8 +37,8 @@
     </div>
   </div>
 
-  <div v-for="item in videoDevices">
-    {{ item }}
+  <div v-for="device in videoDevices">
+    {{ `${device.kind}: ${device.label} id = ${device.deviceId}` }}
   </div>
 </template>
 
@@ -56,7 +56,7 @@ const constraints = {
   video: true,
 } as MediaStreamConstraints;
 
-const getMediaDevices = async () => {
+const getVideoDevices = async () => {
   return await window.navigator.mediaDevices
     .enumerateDevices()
     .then((devices) => {
@@ -152,7 +152,7 @@ const onStop = () => {
 };
 
 onMounted(async () => {
-  videoDevices.value = [...(await getMediaDevices())];
+  videoDevices.value = [...(await getVideoDevices())];
   videoStart();
 });
 </script>
