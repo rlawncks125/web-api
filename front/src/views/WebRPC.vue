@@ -208,6 +208,13 @@ onMounted(async () => {
   await makeConnection();
   Socket.catchJoinUser((res: { clientId: string; offer: any }) => {
     console.log("joinUser", res.offer);
+
+    if (res.offer.type === "offer") {
+      myPeerConnection.setRemoteDescription(res.offer);
+      myPeerConnection.createAnswer().then((answer) => {
+        console.log(answer);
+      });
+    }
   });
   Socket.catchUserLists((res) => {
     console.log("userLists", res);
