@@ -171,6 +171,12 @@ const changeMute = async () => {
   isMuted.value = audio.enabled;
 };
 
+// 연결 handshake
+
+const pc = new RTCPeerConnection();
+const dc = pc.createDataChannel("testCH");
+
+//
 onMounted(async () => {
   videoDevices.value = [...(await getVideoDevices())];
   videoDevices.value.length > 0 && videoStart();

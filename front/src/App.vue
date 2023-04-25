@@ -1,5 +1,14 @@
 <script setup lang="ts">
+import { onMounted } from "vue";
 import { RouterLink, RouterView } from "vue-router";
+import * as Socket from "@/api/socket";
+
+onMounted(() => {
+  Socket.init();
+  Socket.catchAnswer((data) => {
+    console.log(data);
+  });
+});
 </script>
 
 <template>

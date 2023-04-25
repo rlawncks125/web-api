@@ -13,6 +13,7 @@
     "eruda": "^2.11.2",
     "pinia": "^2.0.28",
     "sass": "^1.58.0",
+    "socket.io-client": "^4.6.1",
     "vue": "^3.2.45",
     "vue-router": "^4.1.6",
     "webrtc-adapter": "^8.2.0"
