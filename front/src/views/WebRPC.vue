@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick, reactive, type Ref } from "vue";
+import * as Socket from "@/api/socket";
 
 const stream = ref<MediaStream>();
 const videoTracks = ref<MediaStreamTrack[]>();
@@ -44,6 +45,8 @@ const videoStart = async () => {
 
   await nextTick();
   videoUpdate();
+
+  onVideoStop();
 
   // const twoDevice = await getVideoDevices();
 
@@ -170,16 +173,45 @@ const changeMute = async () => {
 
   isMuted.value = audio.enabled;
 };
-
+// ##########################
 // 연결 handshake
+// ##########################
+let myPeerConnection = new RTCPeerConnection();
 
-const pc = new RTCPeerConnection();
-const dc = pc.createDataChannel("testCH");
+let dc = myPeerConnection.createDataChannel("testroom");
 
+const makeConnection = async () => {
+  if (!stream.value) {
+    Socket.emitJoinRoom({
+      room: "testroom",
+      offer: 4,
+    });
+
+    return;
+  }
+  stream.value
+    .getTracks()
+    .forEach((track) => myPeerConnection.addTrack(track, stream.value!));
+  const offer = await myPeerConnection.createOffer();
+  myPeerConnection.setLocalDescription(offer);
+  console.log("offer", offer);
+
+  Socket.emitJoinRoom({
+    room: "testroom",
+    offer,
+  });
+};
 //
 onMounted(async () => {
   videoDevices.value = [...(await getVideoDevices())];
-  videoDevices.value.length > 0 && videoStart();
+  videoDevices.value.length > 0 && (await videoStart());
+  await makeConnection();
+  Socket.catchJoinUser((res: { clientId: string; offer: any }) => {
+    console.log("joinUser", res.offer);
+  });
+  Socket.catchUserLists((res) => {
+    console.log("userLists", res);
+  });
 });
 </script>
 

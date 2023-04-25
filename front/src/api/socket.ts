@@ -45,3 +45,19 @@ export const catchAnswer = (catchWs: (res: any) => void) => {
     catchWs(res);
   });
 };
+
+export const emitJoinRoom = (payload: { room: string; offer: any }) => {
+  socket.emit("joinRoom", payload);
+};
+export const catchJoinUser = (catchWs: (res: any) => void) => {
+  socket.off("joinUser");
+  socket.on("joinUser", (res: any) => {
+    catchWs(res);
+  });
+};
+export const catchUserLists = (catchWs: (res: any) => void) => {
+  socket.off("userLists");
+  socket.on("userLists", (res: any) => {
+    catchWs(res);
+  });
+};
