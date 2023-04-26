@@ -175,7 +175,7 @@ const changeMute = async () => {
   isMuted.value = audio.enabled;
 };
 // ##########################
-// 연결 handshake
+// ########## WebRTC Pp2 연결
 // ##########################
 let myPeerConnection = new RTCPeerConnection({
   iceServers: [
@@ -189,26 +189,19 @@ let myPeerConnection = new RTCPeerConnection({
 });
 
 const makeConnection = async () => {
-  if (!stream.value) {
-    // Socket.emitIcecandidate({
-    //   room: room,
-    //   icecandidate: 4,
-    // });
-
-    return;
-  }
-  console.log(stream.value);
+  if (!stream.value) return;
+  // console.log(stream.value);
   stream.value
     .getTracks()
     .forEach((track) => myPeerConnection.addTrack(track, stream.value!));
 
-  // offer
+  // create offer
   const offer = await myPeerConnection.createOffer();
   myPeerConnection.setLocalDescription(offer);
-  console.log("offer", offer);
 
-  Socket.emitJoinRoom({
-    room: room,
+  console.log("offer", offer);
+  Socket.emitOffer({
+    room,
     offer,
   });
 };
@@ -216,15 +209,18 @@ const makeConnection = async () => {
 onMounted(async () => {
   videoDevices.value = [...(await getVideoDevices())];
   videoDevices.value.length > 0 && (await videoStart());
+  Socket.emitJoinRoom(room);
 
   await makeConnection();
+
   myPeerConnection.addEventListener("icecandidate", (data) => {
-    console.log("icecandidate", data);
+    console.log("icecandidate", data.candidate);
     if (data.candidate) {
       myPeerConnection.addIceCandidate(data.candidate);
+
       Socket.emitIcecandidate({
         room: room,
-        icecandidate: data.candidate,
+        candidate: data.candidate,
       });
     }
   });
@@ -235,12 +231,12 @@ onMounted(async () => {
     testLists.push(data.streams[0]);
   });
 
-  Socket.catchJoinUser((res: { clientId: string; offer: any }) => {
-    console.log("joinUser offer", res.offer);
+  Socket.catchOffer((offer) => {
+    console.log("recived offer", offer);
+    if (!offer) return;
 
-    // answer
-    if (res.offer.type === "offer") {
-      myPeerConnection.setRemoteDescription(res.offer);
+    if (offer.type === "offer") {
+      myPeerConnection.setRemoteDescription(offer);
       myPeerConnection.createAnswer().then((answer) => {
         myPeerConnection.setLocalDescription(answer);
         Socket.emitAnswer({ room: room, answer });
@@ -248,25 +244,17 @@ onMounted(async () => {
       });
     }
   });
-  Socket.catchCanser((res) => {
-    myPeerConnection.setRemoteDescription(res);
-    console.log("catch answer", res);
-  });
-  Socket.catchIcecandidate((res) => {
-    console.log("catch ice", res);
-    if (res.icecandidate) {
-      myPeerConnection.addIceCandidate(res.icecandidate);
-    }
+
+  Socket.catchAnswer((answer) => {
+    console.log("Recived answer", answer);
+    if (!answer) return;
+    myPeerConnection.setRemoteDescription(answer);
   });
 
-  Socket.catchUserLists((res) => {
-    console.log("userLists", res);
-  });
-  Socket.catchIceList((res) => {
-    // console.log("IceList", res);
-  });
-  Socket.catchLeaveuser((res: any) => {
-    console.log("leaveUser", res);
+  Socket.catchIcecandidate((candidate) => {
+    console.log("Recived candidate", candidate);
+    if (!candidate) return;
+    myPeerConnection.addIceCandidate(candidate);
   });
 });
 </script>
