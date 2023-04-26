@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick, reactive, type Ref } from "vue";
+import { ref, onMounted, nextTick, reactive, type Ref, onUnmounted } from "vue";
 import * as Socket from "@/api/socket";
+import { onBeforeRouteLeave } from "vue-router";
+
+const room = "testroom";
 
 const stream = ref<MediaStream>();
 const videoTracks = ref<MediaStreamTrack[]>();
@@ -20,6 +23,8 @@ const joinRoomUserList = reactive<{ clientId: string; stream: MediaStream }[]>(
   []
 );
 
+const testLists = reactive<MediaStream[]>([]);
+
 const getVideoDevices = async () => {
   return await window.navigator.mediaDevices
     .enumerateDevices()
@@ -38,25 +43,11 @@ const videoUpdate = () => {
 const videoStart = async () => {
   stream.value = await navigator.mediaDevices.getUserMedia(constraints);
 
-  // if (!stream.value) return;
-  // videoTracks.value = stream.value.getVideoTracks();
-  // console.log(videoTracks.value);
-  // console.log(stream.value);
-
   await nextTick();
   videoUpdate();
 
-  onVideoStop();
-
-  // const twoDevice = await getVideoDevices();
-
-  // joinRoomUserList.push({
-  //   clientId: "2424",
-  //   stream: await navigator.mediaDevices.getUserMedia({
-  //     audio: true,
-  //     video: { deviceId: twoDevice[0].deviceId },
-  //   }),
-  // });
+  // onVideoStop();
+  changeMute();
 };
 
 /** 카메라 Pan Tilt zoom 컨트롤 */
@@ -147,6 +138,16 @@ const chnageCamera = async () => {
     audio: constraints.audio,
   });
 
+  const [videoTrack] = stream.value.getVideoTracks();
+
+  if (myPeerConnection) {
+    const videoSender = myPeerConnection
+      .getSenders()
+      .find((sender) => sender.track?.kind === videoTrack.kind);
+
+    videoSender && videoSender!.replaceTrack(videoTrack);
+  }
+
   // videoTracks.value = stream.value.getVideoTracks();
 
   videoUpdate();
@@ -176,28 +177,38 @@ const changeMute = async () => {
 // ##########################
 // 연결 handshake
 // ##########################
-let myPeerConnection = new RTCPeerConnection();
-
-let dc = myPeerConnection.createDataChannel("testroom");
+let myPeerConnection = new RTCPeerConnection({
+  iceServers: [
+    {
+      urls: [
+        "stun:testapi.kimjuchan97.xyz:3478",
+        "stun:testapi.kimjuchan97.xyz:3479",
+      ],
+    },
+  ],
+});
 
 const makeConnection = async () => {
   if (!stream.value) {
-    Socket.emitJoinRoom({
-      room: "testroom",
-      offer: 4,
-    });
+    // Socket.emitIcecandidate({
+    //   room: room,
+    //   icecandidate: 4,
+    // });
 
     return;
   }
+  console.log(stream.value);
   stream.value
     .getTracks()
     .forEach((track) => myPeerConnection.addTrack(track, stream.value!));
+
+  // offer
   const offer = await myPeerConnection.createOffer();
   myPeerConnection.setLocalDescription(offer);
   console.log("offer", offer);
 
   Socket.emitJoinRoom({
-    room: "testroom",
+    room: room,
     offer,
   });
 };
@@ -205,19 +216,57 @@ const makeConnection = async () => {
 onMounted(async () => {
   videoDevices.value = [...(await getVideoDevices())];
   videoDevices.value.length > 0 && (await videoStart());
-  await makeConnection();
-  Socket.catchJoinUser((res: { clientId: string; offer: any }) => {
-    console.log("joinUser", res.offer);
 
-    if (res.offer.type === "offer") {
-      myPeerConnection.setRemoteDescription(res.offer);
-      myPeerConnection.createAnswer().then((answer) => {
-        console.log(answer);
+  await makeConnection();
+  myPeerConnection.addEventListener("icecandidate", (data) => {
+    console.log("icecandidate", data);
+    if (data.candidate) {
+      myPeerConnection.addIceCandidate(data.candidate);
+      Socket.emitIcecandidate({
+        room: room,
+        icecandidate: data.candidate,
       });
     }
   });
+  myPeerConnection.addEventListener("track", (data) => {
+    console.log("addstream", data);
+    const stream = data.streams[0];
+    if (testLists.find((v) => v.id === stream.id)) return;
+    testLists.push(data.streams[0]);
+  });
+
+  Socket.catchJoinUser((res: { clientId: string; offer: any }) => {
+    console.log("joinUser offer", res.offer);
+
+    // answer
+    if (res.offer.type === "offer") {
+      myPeerConnection.setRemoteDescription(res.offer);
+      myPeerConnection.createAnswer().then((answer) => {
+        myPeerConnection.setLocalDescription(answer);
+        Socket.emitAnswer({ room: room, answer });
+        console.log("answer", answer);
+      });
+    }
+  });
+  Socket.catchCanser((res) => {
+    myPeerConnection.setRemoteDescription(res);
+    console.log("catch answer", res);
+  });
+  Socket.catchIcecandidate((res) => {
+    console.log("catch ice", res);
+    if (res.icecandidate) {
+      myPeerConnection.addIceCandidate(res.icecandidate);
+    }
+  });
+
   Socket.catchUserLists((res) => {
     console.log("userLists", res);
+  });
+  Socket.catchIceList((res) => {
+    // console.log("IceList", res);
+  });
+  Socket.catchLeaveuser((res: any) => {
+    console.log("leaveUser", res);
   });
 });
 </script>
@@ -325,6 +374,20 @@ onMounted(async () => {
         </div>
       </div>
     </div>
+  </div>
+
+  <div v-for="other in testLists">
+    {{ other }}
+    <video
+      :srcObject="other"
+      controls
+      autoplay
+      playsinline
+      :style="{
+        width: '400px',
+        height: '400px',
+      }"
+    ></video>
   </div>
 </template>
 

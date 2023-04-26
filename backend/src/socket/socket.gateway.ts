@@ -7,9 +7,13 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 
-interface UserData {
+interface UserOffer {
   clientId: string;
   offer: any;
+}
+interface UserIcecandidate {
+  clientId: string;
+  icecandidate: any;
 }
 
 @WebSocketGateway({
@@ -20,7 +24,8 @@ export class SocketGateway {
   @WebSocketServer()
   server: Server;
 
-  tempLists = new Map<string, UserData[]>();
+  offerLists = new Map<string, UserOffer[]>();
+  icecandidateLists = {};
   userJoinRoomLists = {};
   constructor() {}
 
@@ -39,9 +44,10 @@ export class SocketGateway {
       // console.log('remove', roomName);
       this.leaveUserClean(client, roomName);
     });
-    // console.log(this.tempLists);
+    // console.log(this.offerLists);
 
     delete this.userJoinRoomLists[client.id];
+    delete this.icecandidateLists[client.id];
   }
 
   checkListsRooms = () => {
@@ -50,18 +56,18 @@ export class SocketGateway {
   };
 
   leaveUserClean = (client: Socket, roomName: string) => {
-    const lists = this.tempLists.get(roomName);
+    const lists = this.offerLists.get(roomName);
 
     if (lists && lists.length > 0) {
-      this.tempLists.set(
+      this.offerLists.set(
         roomName,
         lists.filter((v) => v.clientId !== client.id),
       );
 
-      this.tempLists.get(roomName).length === 0 &&
-        this.tempLists.delete(roomName);
+      this.offerLists.get(roomName).length === 0 &&
+        this.offerLists.delete(roomName);
     } else {
-      this.tempLists.delete(roomName);
+      this.offerLists.delete(roomName);
     }
   };
 
@@ -88,8 +94,8 @@ export class SocketGateway {
 
     client.join(room);
 
-    const lists = this.tempLists.get(room);
-    const newUser: UserData = {
+    const lists = this.offerLists.get(room);
+    const newUser: UserOffer = {
       clientId: client.id,
       offer,
     };
@@ -99,12 +105,12 @@ export class SocketGateway {
       client.emit('userLists', lists);
       client.broadcast.to(room).emit('joinUser', newUser);
 
-      this.tempLists.set(room, [...lists, newUser]);
+      this.offerLists.set(room, [...lists, newUser]);
     } else {
       // this.server.to(room).emit('joinUser', newUser);
       client.broadcast.to(room).emit('joinUser', newUser);
 
-      this.tempLists.set(room, [newUser]);
+      this.offerLists.set(room, [newUser]);
     }
 
     // 유저가 방문한 방 리스트 등록
@@ -114,5 +120,48 @@ export class SocketGateway {
     } else {
       this.userJoinRoomLists[client.id] = [room];
     }
+  }
+  @SubscribeMessage('answer')
+  answer(
+    @ConnectedSocket()
+    client: Socket,
+    @MessageBody()
+    { room, answer }: { room: string; answer: any },
+  ): void {
+    // console.log(room, answer);
+    client.broadcast.to(room).emit('Canser', answer);
+  }
+
+  @SubscribeMessage('icecandidate')
+  Icecandidate(
+    @ConnectedSocket()
+    client: Socket,
+    @MessageBody()
+    { room, icecandidate }: { room: string; icecandidate: any },
+  ): void {
+    const lists = this.icecandidateLists[client.id];
+    const newUser: UserIcecandidate = {
+      clientId: client.id,
+      icecandidate,
+    };
+
+    // 방안에 유저 리스트 확인
+    if (lists) {
+      client.emit('iceLists', this.icecandidateLists);
+    }
+    client.broadcast.to(room).emit('ice', newUser);
+
+    this.icecandidateLists[client.id] = newUser;
+  }
+
+  @SubscribeMessage('leaveUser')
+  leaveUser(
+    @ConnectedSocket()
+    client: Socket,
+    @MessageBody()
+    { room, stream }: { room: string; stream: any },
+  ): void {
+    console.log(room, stream);
+    this.server.to(room).emit('leaveUser', stream);
   }
 }

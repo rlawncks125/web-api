@@ -36,15 +36,6 @@ export const isConneted = () => {
 // ###################################
 // ###########  socket on ############
 // ###################################
-export const emitAnswer = () => {
-  socket.emit("answer");
-};
-export const catchAnswer = (catchWs: (res: any) => void) => {
-  socket.off("answer");
-  socket.on("answer", (res: any) => {
-    catchWs(res);
-  });
-};
 
 export const emitJoinRoom = (payload: { room: string; offer: any }) => {
   socket.emit("joinRoom", payload);
@@ -58,6 +49,47 @@ export const catchJoinUser = (catchWs: (res: any) => void) => {
 export const catchUserLists = (catchWs: (res: any) => void) => {
   socket.off("userLists");
   socket.on("userLists", (res: any) => {
+    catchWs(res);
+  });
+};
+
+export const emitAnswer = (payload: { room: string; answer: any }) => {
+  socket.emit("answer", payload);
+};
+
+export const catchCanser = (catchWs: (res: any) => void) => {
+  socket.off("Canser");
+  socket.on("Canser", (res: any) => {
+    catchWs(res);
+  });
+};
+export const emitIcecandidate = (payload: {
+  room: string;
+  icecandidate: any;
+}) => {
+  socket.emit("icecandidate", payload);
+};
+
+export const catchIcecandidate = (catchWs: (res: any) => void) => {
+  socket.off("ice");
+  socket.on("ice", (res: any) => {
+    catchWs(res);
+  });
+};
+export const catchIceList = (catchWs: (res: any) => void) => {
+  socket.off("iceLists");
+  socket.on("iceLists", (res: any) => {
+    catchWs(res);
+  });
+};
+
+export const emitLeaveUser = (payload: { room: string; stream: any }) => {
+  socket.emit("leaveUser", payload);
+};
+
+export const catchLeaveuser = (catchWs: (res: any) => void) => {
+  socket.off("leaveUser");
+  socket.on("leaveUser", (res: any) => {
     catchWs(res);
   });
 };

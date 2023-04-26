@@ -5,9 +5,6 @@ import * as Socket from "@/api/socket";
 
 onMounted(() => {
   Socket.init();
-  Socket.catchAnswer((data) => {
-    console.log(data);
-  });
 });
 </script>
 
