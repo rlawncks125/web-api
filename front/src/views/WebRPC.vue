@@ -5,25 +5,24 @@ import { onBeforeRouteLeave } from "vue-router";
 
 const room = "testroom";
 
-const stream = ref<MediaStream>();
-const videoTracks = ref<MediaStreamTrack[]>();
+const videoDevices = ref<any[]>([]);
+// const videoTracks = ref<MediaStreamTrack[]>();
 const constraints = {
   audio: true,
   video: true,
 } as MediaStreamConstraints;
 
-const videoDevices = ref<any[]>([]);
+const stream = ref<MediaStream>();
 const videoRef = ref<HTMLVideoElement>();
 const AdvancedOptionsSelect = ref<HTMLSelectElement>();
+
+const peerUserStream = ref<MediaStream>();
+const peerVideoRef = ref<HTMLVideoElement>();
 
 const isMuted = ref<boolean>(constraints.audio as boolean);
 const videoVolume = ref(50);
 
-const joinRoomUserList = reactive<{ clientId: string; stream: MediaStream }[]>(
-  []
-);
-
-const testLists = reactive<MediaStream[]>([]);
+const initVloume = 0.2;
 
 const getVideoDevices = async () => {
   return await window.navigator.mediaDevices
@@ -47,7 +46,8 @@ const videoStart = async () => {
   videoUpdate();
 
   // onVideoStop();
-  changeMute();
+  // changeMute();
+  videoRef.value!.volume = initVloume;
 };
 
 /** 카메라 Pan Tilt zoom 컨트롤 */
@@ -102,24 +102,18 @@ const streamEnable = (stream: MediaStream, enabled: boolean) => {
   stream.getAudioTracks()[0].enabled = enabled;
 };
 
-const onVideoPlay = (clientId?: string) => {
-  if (clientId) {
-    const user = joinRoomUserList.find((v) => v.clientId === clientId);
-
-    user && streamEnable(user.stream, true);
-  } else {
-    stream.value && streamEnable(stream.value, true);
-  }
+const onVideoPlay = () => {
+  stream.value && streamEnable(stream.value, true);
+};
+const onPeerVideoPlay = () => {
+  peerUserStream.value && streamEnable(peerUserStream.value, true);
 };
 
-const onVideoStop = (clientId?: string) => {
-  if (clientId) {
-    const user = joinRoomUserList.find((v) => v.clientId === clientId);
-
-    user && streamEnable(user.stream, false);
-  } else {
-    stream.value && streamEnable(stream.value, false);
-  }
+const onVideoStop = () => {
+  stream.value && streamEnable(stream.value, false);
+};
+const onPeerVideoStop = () => {
+  peerUserStream.value && streamEnable(peerUserStream.value, false);
 };
 
 // 카메라 변경
@@ -138,6 +132,7 @@ const chnageCamera = async () => {
     audio: constraints.audio,
   });
 
+  // p2p 연결 비디오 변경
   const [videoTrack] = stream.value.getVideoTracks();
 
   if (myPeerConnection) {
@@ -227,8 +222,9 @@ onMounted(async () => {
   myPeerConnection.addEventListener("track", (data) => {
     console.log("addstream", data);
     const stream = data.streams[0];
-    if (testLists.find((v) => v.id === stream.id)) return;
-    testLists.push(data.streams[0]);
+    peerUserStream.value = stream;
+
+    peerVideoRef.value!.volume = initVloume;
   });
 
   Socket.catchOffer((offer) => {
@@ -324,18 +320,23 @@ onMounted(async () => {
     {{ `${device.kind}: ${device.label} id = ${device.deviceId}` }}
   </div>
 
-  <!-- 참여 유저들 카메라 -->
+  <!-- 참여 유저 카메라 -->
   <div>
     <div>
-      <h2>현재 참여 중인방 {{ "이이이이" }}</h2>
-      <label for="joinRoom">방 이름</label>
+      <h2>현재 참여 중인방 {{ room }}</h2>
+      <!-- <label for="joinRoom">방 이름</label>
       <input type="text" name="" id="joinRoom" />
-      <button>방 참여</button>
+      <button>방 참여</button> -->
     </div>
-    <!-- 참여중인 유저 카메라 -->
-    <div class="join_users_list" v-if="joinRoomUserList.length > 0">
-      <div v-for="user in joinRoomUserList">
-        <video :srcObject="user.stream" autoplay playsinline></video>
+    <!-- 참여 유저 카메라 -->
+    <div class="peer-user-stream" v-if="peerUserStream">
+      <div>
+        <video
+          ref="peerVideoRef"
+          :srcObject="peerUserStream"
+          autoplay
+          playsinline
+        ></video>
         <!-- 비디오 컨트롤러 -->
         <div class="p-4">
           <h2>비디오 컨트롤러</h2>
@@ -352,30 +353,14 @@ onMounted(async () => {
           <br />
           <!-- 시작 & 중지 버튼 -->
           <div class="">
-            <button class="border px-2" @click="onVideoPlay(user.clientId)">
+            <button class="border px-2" @click="onPeerVideoPlay()">
               start
             </button>
-            <button class="border px-2" @click="onVideoStop(user.clientId)">
-              stop
-            </button>
+            <button class="border px-2" @click="onPeerVideoStop()">stop</button>
           </div>
         </div>
       </div>
     </div>
-  </div>
-
-  <div v-for="other in testLists">
-    {{ other }}
-    <video
-      :srcObject="other"
-      controls
-      autoplay
-      playsinline
-      :style="{
-        width: '400px',
-        height: '400px',
-      }"
-    ></video>
   </div>
 </template>
 
