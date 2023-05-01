@@ -22,7 +22,7 @@ const peerVideoRef = ref<HTMLVideoElement>();
 const isMuted = ref<boolean>(constraints.audio as boolean);
 const videoVolume = ref(50);
 
-const initVloume = 0.2;
+const initVloume = 0.15;
 
 const getVideoDevices = async () => {
   return await window.navigator.mediaDevices
@@ -105,12 +105,11 @@ const streamEnable = (stream: MediaStream, enabled: boolean) => {
 const onVideoPlay = () => {
   stream.value && streamEnable(stream.value, true);
 };
-const onPeerVideoPlay = () => {
-  peerUserStream.value && streamEnable(peerUserStream.value, true);
-};
-
 const onVideoStop = () => {
   stream.value && streamEnable(stream.value, false);
+};
+const onPeerVideoPlay = () => {
+  peerUserStream.value && streamEnable(peerUserStream.value, true);
 };
 const onPeerVideoStop = () => {
   peerUserStream.value && streamEnable(peerUserStream.value, false);
@@ -132,20 +131,10 @@ const chnageCamera = async () => {
     audio: constraints.audio,
   });
 
-  // p2p 연결 비디오 변경
-  const [videoTrack] = stream.value.getVideoTracks();
-
-  if (myPeerConnection) {
-    const videoSender = myPeerConnection
-      .getSenders()
-      .find((sender) => sender.track?.kind === videoTrack.kind);
-
-    videoSender && videoSender!.replaceTrack(videoTrack);
-  }
-
   // videoTracks.value = stream.value.getVideoTracks();
 
   videoUpdate();
+  senderVideoUpdate();
 };
 
 // 불륨 변경
@@ -169,10 +158,10 @@ const changeMute = async () => {
 
   isMuted.value = audio.enabled;
 };
-// ##########################
-// ########## WebRTC Pp2 연결
-// ##########################
-let myPeerConnection = new RTCPeerConnection({
+// #########################################
+// ########## WebRTC P2P 연결 ##############
+// #########################################
+const myPeerConnection = new RTCPeerConnection({
   iceServers: [
     {
       urls: [
@@ -182,6 +171,8 @@ let myPeerConnection = new RTCPeerConnection({
     },
   ],
 });
+// data Channel connection
+let dataChannel: RTCDataChannel;
 
 const makeConnection = async () => {
   if (!stream.value) return;
@@ -190,76 +181,153 @@ const makeConnection = async () => {
     .getTracks()
     .forEach((track) => myPeerConnection.addTrack(track, stream.value!));
 
+  await sendOffer();
+};
+// # send offer , Recived Offer
+async function sendOffer() {
+  // Data Channel Create
+  sendDataChannel();
   // create offer
   const offer = await myPeerConnection.createOffer();
   myPeerConnection.setLocalDescription(offer);
 
-  console.log("offer", offer);
+  // console.log("offer", offer);
   Socket.emitOffer({
     room,
     offer,
   });
+}
+const recivedOffer = (offer: RTCSessionDescriptionInit) => {
+  // console.log("recived offer", offer);
+  if (!offer) return;
+
+  if (offer.type === "offer") {
+    myPeerConnection.setRemoteDescription(offer);
+    sendAnswer();
+  }
 };
-//
+
+// # sned answer , Recived answer
+function sendAnswer() {
+  // dataChannel Recived
+  myPeerConnection.addEventListener("datachannel", recivedDataChannel);
+
+  myPeerConnection.createAnswer().then((answer) => {
+    myPeerConnection.setLocalDescription(answer);
+    Socket.emitAnswer({ room: room, answer });
+    // console.log("answer", answer);
+  });
+}
+const recivedAnswer = (answer: any) => {
+  // console.log("Recived answer", answer);
+  if (!answer) return;
+  myPeerConnection.setRemoteDescription(answer);
+};
+
+// # send candidate , Recived candidate
+const sendCandidate = (data: RTCPeerConnectionIceEvent) => {
+  // console.log("icecandidate", data.candidate);
+  if (data.candidate) {
+    Socket.emitIcecandidate({
+      room: room,
+      candidate: data.candidate,
+    });
+  }
+};
+const recivedCandidate = (candidate: RTCIceCandidate) => {
+  // console.log("Recived candidate", candidate);
+  if (!candidate) return;
+  myPeerConnection.addIceCandidate(candidate);
+};
+
+// # addStream
+const addStream = async (data: RTCTrackEvent) => {
+  console.log("addstream", data);
+  const stream = data.streams[0];
+  peerUserStream.value = stream;
+
+  await nextTick();
+  peerVideoRef.value!.volume = initVloume;
+};
+
+/** 변경된 video 정보
+ *  연결된 Peer에게 video 업데이트 보내기 */
+const senderVideoUpdate = () => {
+  if (!stream.value) return;
+  // p2p 연결 비디오 변경
+  const [videoTrack] = stream.value.getVideoTracks();
+
+  if (myPeerConnection) {
+    const videoSender = myPeerConnection
+      .getSenders() // kind === video
+      .find((sender) => sender.track?.kind === videoTrack.kind);
+
+    videoSender && videoSender!.replaceTrack(videoTrack);
+  }
+};
+const senderAudioUpdate = () => {
+  if (!stream.value) return;
+
+  const [audioTrack] = stream.value.getAudioTracks();
+
+  const audioSender = myPeerConnection
+    .getSenders()
+    .find((sender) => sender.track?.kind === audioTrack.kind);
+
+  audioSender && audioSender.replaceTrack(audioTrack);
+};
+
+// ####
+// #### data channel
+// ####
+function sendDataChannel() {
+  dataChannel = myPeerConnection.createDataChannel("myApp channel");
+  dataChannel.onopen = (event) => {
+    console.log("데이터 채널 open : ", event);
+  };
+  dataChannel.onmessage = (msg) => {
+    console.log("Open Peer Msg : ", msg.data);
+  };
+}
+function recivedDataChannel(event: RTCDataChannelEvent) {
+  dataChannel = event.channel;
+  dataChannel.onmessage = (msg) => {
+    console.log("recived Peer msg : ", msg.data);
+  };
+}
+
+const sendMessage = () => {
+  dataChannel.send("데이터 테스트");
+};
+
 onMounted(async () => {
   videoDevices.value = [...(await getVideoDevices())];
   videoDevices.value.length > 0 && (await videoStart());
+
   Socket.emitJoinRoom(room);
 
+  myPeerConnection.addEventListener("icecandidate", sendCandidate);
+  myPeerConnection.addEventListener("track", addStream);
+
+  Socket.catchOffer(recivedOffer);
+  Socket.catchAnswer(recivedAnswer);
+  Socket.catchIcecandidate(recivedCandidate);
+
   await makeConnection();
-
-  myPeerConnection.addEventListener("icecandidate", (data) => {
-    console.log("icecandidate", data.candidate);
-    if (data.candidate) {
-      // myPeerConnection.addIceCandidate(data.candidate);
-
-      Socket.emitIcecandidate({
-        room: room,
-        candidate: data.candidate,
-      });
-    }
-  });
-  myPeerConnection.addEventListener("track", (data) => {
-    console.log("addstream", data);
-    const stream = data.streams[0];
-    peerUserStream.value = stream;
-
-    peerVideoRef.value!.volume = initVloume;
-  });
-
-  Socket.catchOffer((offer) => {
-    console.log("recived offer", offer);
-    if (!offer) return;
-
-    if (offer.type === "offer") {
-      myPeerConnection.setRemoteDescription(offer);
-      myPeerConnection.createAnswer().then((answer) => {
-        myPeerConnection.setLocalDescription(answer);
-        Socket.emitAnswer({ room: room, answer });
-        console.log("answer", answer);
-      });
-    }
-  });
-
-  Socket.catchAnswer((answer) => {
-    console.log("Recived answer", answer);
-    if (!answer) return;
-    myPeerConnection.setRemoteDescription(answer);
-  });
-
-  Socket.catchIcecandidate((candidate) => {
-    console.log("Recived candidate", candidate);
-    if (!candidate) return;
-    myPeerConnection.addIceCandidate(candidate);
-  });
 });
 </script>
 
 <template>
   <!-- 참고 사이트 -->
   <!-- https://webrtc.github.io/samples/ -->
-  <div>Web RPC</div>
+  <div>Web RPC P2P 연결</div>
   <!-- 비디오 wrap -->
+  <button
+    @click="sendMessage"
+    class="border p-1 bg-blue-200 hover:bg-blue-400 transition"
+  >
+    데이터 보내기
+  </button>
   <div v-if="stream" class="flex justify-between px-4">
     <!-- 비디오 -->
     <div>
