@@ -211,7 +211,7 @@ onMounted(async () => {
   myPeerConnection.addEventListener("icecandidate", (data) => {
     console.log("icecandidate", data.candidate);
     if (data.candidate) {
-      myPeerConnection.addIceCandidate(data.candidate);
+      // myPeerConnection.addIceCandidate(data.candidate);
 
       Socket.emitIcecandidate({
         room: room,
