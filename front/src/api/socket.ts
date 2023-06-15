@@ -1,7 +1,7 @@
 import { io, type Socket } from "socket.io-client";
 
 let socket: Socket;
-const wsServerURI = "https://testapi.kimjuchan97.xyz";
+const wsServerURI = "https://myapi.juchandev.xyz";
 
 export const init = () => {
   socket = io(`${wsServerURI}/webRPC`, {

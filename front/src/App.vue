@@ -21,6 +21,7 @@ onMounted(() => {
         <RouterLink to="/draganddrop">Drag and Drop</RouterLink>
         <RouterLink to="/webRPC">Web RPC</RouterLink>
         <RouterLink to="/share">Share</RouterLink>
+        <RouterLink to="/permission">Permission</RouterLink>
       </nav>
     </div>
   </header>
