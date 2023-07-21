@@ -43,10 +43,10 @@ const permissionFunctions = {
   notifications: requestNotifiaction,
   geolocation: requestGeolocation,
   midi: requestMidi,
-};
+} as { [key: string]: any };
 
 type permissionName = keyof typeof permissionFunctions;
-const onClick = (name: permissionName) => {
+const requestPermissionByName = async (name: permissionName) => {
   navigator.permissions
     // @ts-ignore
     .query({ name })
@@ -55,24 +55,33 @@ const onClick = (name: permissionName) => {
 
       if (result.state === "granted") {
         console.log("허용됨");
-        permissionFunctions[name]();
+        await permissionFunctions[name]();
       } else if (result.state === "prompt") {
         console.log("권한 요청");
-        permissionFunctions[name]();
+        await permissionFunctions[name]();
       } else {
         console.log("거절");
       }
       // Don't do anything if the permission was denied.
     });
 };
+
+async function allRequest() {
+  const lists: permissionName[] = ["geolocation", "notifications", "midi"];
+
+  lists.forEach((v) => {
+    requestPermissionByName(v);
+  });
+}
 </script>
 
 <template>
   <div>Permission</div>
   <div class="flex flex-col items-start">
-    <button @click="onClick('notifications')">알람 권한</button>
-    <button @click="onClick('geolocation')">위치 권한</button>
-    <button @click="onClick('midi')">미디어 권한</button>
+    <button @click="allRequest">all권한</button>
+    <button @click="requestPermissionByName('notifications')">알람 권한</button>
+    <button @click="requestPermissionByName('geolocation')">위치 권한</button>
+    <button @click="requestPermissionByName('midi')">미디어 권한</button>
   </div>
   <div></div>
 </template>
