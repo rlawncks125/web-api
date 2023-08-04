@@ -2,9 +2,12 @@
 *.env
 
 
-*.yml
-nginx.*
+# *.yml
+# nginx.*
+
 
 
 certbot
 certbot/**
+
+letsencrypt

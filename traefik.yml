@@ -1,0 +1,38 @@
+## traefik.yml
+
+# 환경 설정 CLI 명령으로 선언시
+# command:
+#   - "--api.insecure=true"
+#   - "--providers.docker=true"
+#   - "--providers.docker.exposedbydefault=false"
+#   - --providers.file.filename=/etc/traefik/dynamic_conf.yml
+#   - "--entrypoints.web.address=:80"
+#   - "--entrypoints.websecure.address=:443"
+
+## Static configuration
+entryPoints:
+  web:
+    address: ":80"
+    # 전역(모든도메인) https redirect
+    http:
+      redirections:
+        entryPoint:
+          to: "websecure"
+          scheme: "https"
+  websecure:
+    address: ":443"
+
+# Docker configuration backend
+providers:
+  docker:
+    # network: "my-bridge-network"
+    exposedByDefault: false
+    watch: true
+  file:
+    filename: /etc/traefik/dynamic_conf.yml
+    watch: true
+
+# API and dashboard configuration
+api:
+  # dashboard: true
+  insecure: true

@@ -1,0 +1,95 @@
+# TLS 적용안됌
+# 이유 : 인증서를 자동으로 발급받는데
+# 예약된 주소로 HTTP 유효성 검사에 실패됨
+# + 방화벽에서 차단되는거 같음
+
+# 인증서 발급 확인 테스트 사이트 : https://letsdebug.net/
+# 수동으로 발급받아서 NGINX에 돌려야 할거같음
+
+version: "3.3"
+
+services:
+  traefik:
+    image: traefik:v3.0
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    volumes:
+      # docker 와 연결 설정
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # 환경 파일 & 설정 파일
+      - ./traefik.yml:/etc/traefik/traefik.yml
+      - ./dynamic_conf.yml:/etc/traefik/dynamic_conf.yml
+      # SSL
+      - ../domain-ssl/mylocal/conf:/etc/letsencrypt/mylocal
+      - ../domain-ssl/myapi/conf:/etc/letsencrypt/myapi
+    container_name: web-api-traefik
+
+  backend:
+    image: rlawncks125/web-api-backend
+    build:
+      context: ./backend
+      dockerfile: dockerfile
+    ports:
+      - 3010:3010
+    environment:
+      - PORT=3010
+    env_file:
+      - ./email.env
+      - ./openai.env
+    volumes:
+      - ./backend:/app
+    labels:
+      - "traefik.enable=true"
+      # https redirect 도메인별
+      # - traefik.http.routers.backend.entrypoints=web
+      # - "traefik.http.routers.backend.rule=Host(`myapi.juchandev.xyz`)"
+      # - "traefik.http.routers.backend.middlewares=redirect-https"
+      # - "traefik.http.middlewares.redirect-https.redirectscheme.scheme=https"
+      - traefik.http.routers.backend-https.entrypoints=websecure
+      - "traefik.http.routers.backend-https.rule=Host(`myapi.juchandev.xyz`)"
+      - traefik.http.routers.backend-https.tls=true
+    depends_on:
+      - traefik
+    container_name: web-api-backend
+
+  front:
+    image: rlawncks125/web-api-front
+    build:
+      context: ./front
+      dockerfile: dockerfile
+    ports:
+      - 8010:8010
+    environment:
+      - PORT=8010
+    volumes:
+      - ./front:/app
+    labels:
+      - "traefik.enable=true"
+      - traefik.http.routers.front.entrypoints=websecure
+      - "traefik.http.routers.front.rule=Host(`mylocal.juchandev.xyz`)"
+      - traefik.http.routers.front.tls=true
+    depends_on:
+      - traefik
+    container_name: web-api-front-1
+
+  # front-2:
+  #   image: rlawncks125/web-api-front
+  #   build:
+  #     context: ./front
+  #     dockerfile: dockerfile
+  #   ports:
+  #     - 8011:8011
+  #   environment:
+  #     - PORT=8011
+  #   volumes:
+  #     - ./front:/app
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - traefik.http.routers.front-2.entrypoints=websecure
+  #     - "traefik.http.routers.front-2.rule=Host(`mylocal.juchandev.xyz`)"
+  #     - traefik.http.routers.front-2.tls=true
+  #   depends_on:
+  #     - traefik
+  #   container_name: web-api-front-2

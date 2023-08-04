@@ -1,0 +1,53 @@
+version: "3"
+
+services:
+  nginx:
+    image: nginx
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ../domain-ssl/mylocal/conf:/etc/letsencrypt/mylocal
+      - ../domain-ssl/myapi/conf:/etc/letsencrypt/myapi
+    container_name: wab_api_nginx
+
+  backend:
+    image: rlawncks125/web-api-backend
+    build:
+      context: ./backend
+      dockerfile: dockerfile
+    ports:
+      - 3010:3010
+    environment:
+      - PORT=3010
+    env_file:
+      - ./email.env
+      - ./openai.env
+    volumes:
+      - ./backend:/app
+    container_name: wab_api_backend
+
+  front:
+    image: rlawncks125/web-api-front
+    build:
+      context: ./front
+      dockerfile: dockerfile
+    ports:
+      - 8010:8010
+    environment:
+      - PORT=8010
+    volumes:
+      - ./front:/app
+    container_name: web_api_front
+
+  turnserver:
+    image: coturn/coturn
+    ports:
+      - 3478:3478
+      - 3478:3478/udp
+      - 3479:3479
+      - 3479:3479/udp
+    volumes:
+      - ./turn/my.conf:/etc/coturn/turnserver.conf
+    container_name: web_api_turn_server

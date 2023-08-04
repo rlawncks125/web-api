@@ -1,0 +1,7 @@
+# Dynamic configuration
+tls:
+  certificates:
+    - certFile: "/etc/letsencrypt/mylocal/live/mylocal.juchandev.xyz/fullchain.pem"
+      keyFile: "/etc/letsencrypt/mylocal/live/mylocal.juchandev.xyz/privkey.pem"
+    - certFile: "/etc/letsencrypt/myapi/live/myapi.juchandev.xyz/fullchain.pem"
+      keyFile: "/etc/letsencrypt/myapi/live/myapi.juchandev.xyz/privkey.pem"
