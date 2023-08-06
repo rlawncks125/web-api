@@ -24,14 +24,14 @@ export class AppService {
   async sendMailer(paylaod: any): Promise<any> {
     console.log(paylaod);
     return await this.#transporter.sendMail({
-      from: 'test@juchandev.xyz',
+      from: '"김주찬 메일" <test@juchandev.xyz>',
       to: 'rlawncks125@naver.com',
       subject: paylaod.title,
       html: `
       <div style="margin: auto; text-align: center">
       <h1> ${paylaod.test}</h1>
       <div style="border: 1px solid black">
-        <p>로컬 사이틀 가고 싶은면 버튼을 눌러주세여</p>
+        <p>로컬 사이트를 가고 싶은면 버튼을 눌러주세여</p>
         <div style="padding: 1rem">
           <a
             href=https://mylocal.juchandev.xyz

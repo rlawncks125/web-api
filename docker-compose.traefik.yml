@@ -42,13 +42,14 @@ services:
       - ./backend:/app
     labels:
       - "traefik.enable=true"
-      # https redirect 도메인별
-      # - traefik.http.routers.backend.entrypoints=web
-      # - "traefik.http.routers.backend.rule=Host(`myapi.juchandev.xyz`)"
-      # - "traefik.http.routers.backend.middlewares=redirect-https"
-      # - "traefik.http.middlewares.redirect-https.redirectscheme.scheme=https"
+      #   # https redirect 도메인별
+      #   # - traefik.http.routers.backend.entrypoints=web
+      #   # - "traefik.http.routers.backend.rule=Host(`myapi.juchandev.xyz`)"
+      #   # - "traefik.http.routers.backend.middlewares=redirect-https"
+      #   # - "traefik.http.middlewares.redirect-https.redirectscheme.scheme=https"
+
       - traefik.http.routers.backend-https.entrypoints=websecure
-      - "traefik.http.routers.backend-https.rule=Host(`myapi.juchandev.xyz`)"
+      - traefik.http.routers.backend-https.rule=Host(`myapi.juchandev.xyz`)
       - traefik.http.routers.backend-https.tls=true
     depends_on:
       - traefik
@@ -67,29 +68,16 @@ services:
       - ./front:/app
     labels:
       - "traefik.enable=true"
+
       - traefik.http.routers.front.entrypoints=websecure
       - "traefik.http.routers.front.rule=Host(`mylocal.juchandev.xyz`)"
       - traefik.http.routers.front.tls=true
+
+      # proxy URL /api reWrite
+      - "traefik.http.routers.front.middlewares=proxy-api"
+      - "traefik.http.middlewares.proxy-api.redirectRegex.regex=^https://mylocal.juchandev.xyz/api/(.*)"
+      - "traefik.http.middlewares.proxy-api.redirectRegex.replacement=https://myapi.juchandev.xyz/$$1"
+
     depends_on:
       - traefik
     container_name: web-api-front-1
-
-  # front-2:
-  #   image: rlawncks125/web-api-front
-  #   build:
-  #     context: ./front
-  #     dockerfile: dockerfile
-  #   ports:
-  #     - 8011:8011
-  #   environment:
-  #     - PORT=8011
-  #   volumes:
-  #     - ./front:/app
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - traefik.http.routers.front-2.entrypoints=websecure
-  #     - "traefik.http.routers.front-2.rule=Host(`mylocal.juchandev.xyz`)"
-  #     - traefik.http.routers.front-2.tls=true
-  #   depends_on:
-  #     - traefik
-  #   container_name: web-api-front-2

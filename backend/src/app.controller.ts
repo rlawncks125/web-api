@@ -10,6 +10,11 @@ export class AppController {
     return this.appService.getHello();
   }
 
+  @Get('hello')
+  getHellos(): string {
+    return this.appService.getHello();
+  }
+
   @Post('mail-snder')
   sendMail(@Body() payload) {
     return this.appService.sendMailer(payload);

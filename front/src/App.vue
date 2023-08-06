@@ -5,6 +5,12 @@ import * as Socket from "@/api/socket";
 
 onMounted(() => {
   Socket.init();
+
+  fetch("/api/hello")
+    .then((res) => res.text())
+    .then((data) => {
+      console.log(data);
+    });
 });
 </script>
 
