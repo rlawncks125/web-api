@@ -15,8 +15,8 @@ export class StreamController {
     return this.streamService.streamVideo(respone);
   }
 
-  // @Get('download')
-  // getDownload(@Res() respone: Response) {
-  //   return this.streamService.download(respone);
-  // }
+  @Get('file/download')
+  getDownload(@Res() respone: Response) {
+    return this.streamService.download(respone);
+  }
 }

@@ -39,43 +39,6 @@ const getTextStream = () => {
   });
 };
 
-const readVideo = (
-  reader: ReadableStreamDefaultReader<Uint8Array> | undefined,
-  callback?: (value: any) => void
-) => {
-  if (!reader) return;
-
-  reader.read().then(({ done, value }) => {
-    // 더이상 처리할 데이터가 없다
-    if (done) {
-      console.log("stream end");
-      return;
-    }
-
-    // 처리
-    if (callback) {
-      callback(value.buffer);
-    }
-
-    // 다음 stream 호출
-    readText(reader, callback);
-  });
-};
-
-const donload = () => {
-  fetch("api/stream/download")
-    .then((res) => res.blob())
-    .then((blob) => {
-      console.log(blob);
-      const url = window.URL.createObjectURL(new Blob([blob]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", "테스트.png");
-      document.body.appendChild(link);
-      link.click();
-    });
-};
-
 onMounted(() => {});
 </script>
 
@@ -98,8 +61,6 @@ onMounted(() => {});
     <source src="api/stream/video" type="video/mp4" />
   </video>
   <img src="api/stream/image" alt="" />
-
-  <button @click="donload">다운로드</button>
 </template>
 
 <style lang="scss" scoped></style>
