@@ -11,3 +11,5 @@ certbot
 certbot/**
 
 letsencrypt
+
+db

@@ -21,6 +21,8 @@ entryPoints:
           scheme: "https"
   websecure:
     address: ":443"
+  postgress:
+    address: ":5432"
 
 # Docker configuration backend
 providers:

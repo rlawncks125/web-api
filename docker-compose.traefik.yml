@@ -38,6 +38,7 @@ services:
     env_file:
       - ./email.env
       - ./openai.env
+      - ./prisma.env
     volumes:
       - ./backend:/app
     labels:
@@ -68,11 +69,9 @@ services:
       - ./front:/app
     labels:
       - "traefik.enable=true"
-
       - traefik.http.routers.front.entrypoints=websecure
       - "traefik.http.routers.front.rule=Host(`mylocal.juchandev.xyz`)"
       - traefik.http.routers.front.tls=true
-
       # proxy URL /api reWrite
       - "traefik.http.routers.front.middlewares=proxy-api"
       - "traefik.http.middlewares.proxy-api.redirectRegex.regex=^https://mylocal.juchandev.xyz/api/(.*)"
@@ -81,3 +80,20 @@ services:
     depends_on:
       - traefik
     container_name: web-api-front-1
+
+  myPostgresql:
+    image: postgres:latest
+    ports:
+      - 5432:5432
+    env_file:
+      - ./db.env
+    volumes:
+      - ./postgresql-db:/var/lib/postgresql/data
+    labels:
+      - "traefik.enable=true"
+      - traefik.http.routers.backend.entrypoints=postgress
+      - "traefik.http.routers.backend.rule=Host(`mydb.juchandev.xyz`)"
+    depends_on:
+      - traefik
+      - backend
+    container_name: web-api-DB
