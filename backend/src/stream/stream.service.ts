@@ -7,6 +7,7 @@ import {
   readFileSync,
   watch,
   FSWatcher,
+  ReadStream,
 } from 'fs';
 import { resolve, join } from 'path';
 
@@ -14,6 +15,8 @@ import { resolve, join } from 'path';
 export class StreamService {
   wathResponse: Response;
   StateWatcher: FSWatcher;
+  oldLength = 0;
+
   constructor() {}
 
   async streamText(res: Response) {
@@ -34,7 +37,6 @@ export class StreamService {
     );
 
     res.header('Content-Type', 'video/mp4');
-
     file.pipe(res);
   }
 
@@ -59,19 +61,26 @@ export class StreamService {
     this.wathResponse = res;
 
     const filePath = join(process.cwd(), 'watch.txt');
-    let oldLength = 0;
+
+    const data = readFileSync(filePath, 'utf-8');
+    this.oldLength = data.length;
+    this.wathResponse.write(data);
+
     this.StateWatcher = watch(filePath, (curr, prev) => {
       const data = readFileSync(filePath, 'utf-8');
       // console.log('---------------');
-      // console.log('cahgeFile_length', data.length);
       // console.log('파일 변경 감지');
       // console.log('---------------');
 
-      const changeData = data.slice(oldLength, data.length);
+      // 변경된 내용만 추가하고 싶을떄
+
+      const changeData = data.slice(this.oldLength, data.length);
       console.log('변경된 내용 :', changeData);
 
-      oldLength = data.length;
-      this.wathResponse.write(changeData);
+      if (data.length !== 0) {
+        this.oldLength = data.length;
+        this.wathResponse.write(changeData);
+      }
     });
   }
 
@@ -79,6 +88,8 @@ export class StreamService {
     console.log('watch 중단');
     this.wathResponse && this.wathResponse.end();
     this.StateWatcher && this.StateWatcher.close();
+
+    this.oldLength = 0;
     this.wathResponse = null;
     return '중단';
   }

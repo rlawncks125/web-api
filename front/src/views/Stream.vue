@@ -3,7 +3,7 @@ import { onMounted, ref } from "vue";
 
 const textBuffer = ref("");
 const videoRef = ref<HTMLVideoElement>();
-let fileWatchArray = ref<string[]>([]);
+const fileWatchArray = ref("");
 
 const readText = (
   reader: ReadableStreamDefaultReader<Uint8Array> | undefined,
@@ -44,9 +44,8 @@ const watchFile = () => {
     const reader = res.body?.getReader();
 
     readText(reader, (value) => {
-      const data = (value as string).split("\n");
-      console.log("watch : ", data);
-      fileWatchArray.value.push(...data);
+      console.log("받은 데이터 : ", value);
+      fileWatchArray.value += value;
     });
   });
 };
@@ -54,6 +53,10 @@ const endWatch = () => {
   fetch("api/stream/watch/end").then((res) => {
     console.log("");
   });
+};
+
+const dataToByline = (data: string) => {
+  return data.split("\n");
 };
 
 onMounted(() => {});
@@ -86,7 +89,7 @@ onMounted(() => {});
   </div>
   <div class="border mt-4">
     <h2>변경된 데이터 :</h2>
-    <p v-for="data in fileWatchArray" v-html="data"></p>
+    <p v-for="data in dataToByline(fileWatchArray)" v-html="data"></p>
   </div>
 </template>
 
