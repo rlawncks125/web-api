@@ -1,5 +1,5 @@
 import { Controller, Get, Res } from '@nestjs/common';
-import { Response } from 'express';
+import { Response, response } from 'express';
 import { StreamService } from './stream.service';
 
 @Controller('stream')
@@ -18,5 +18,15 @@ export class StreamController {
   @Get('file/download')
   getDownload(@Res() respone: Response) {
     return this.streamService.download(respone);
+  }
+
+  @Get('watch')
+  watchFile(@Res() respone: Response) {
+    return this.streamService.chageFileWatch(respone);
+  }
+
+  @Get('watch/end')
+  endWatch() {
+    return this.streamService.watchEnd();
   }
 }

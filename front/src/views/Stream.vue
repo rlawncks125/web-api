@@ -3,7 +3,7 @@ import { onMounted, ref } from "vue";
 
 const textBuffer = ref("");
 const videoRef = ref<HTMLVideoElement>();
-let arrayBuffer: any[] = [];
+let fileWatchArray = ref<string[]>([]);
 
 const readText = (
   reader: ReadableStreamDefaultReader<Uint8Array> | undefined,
@@ -39,6 +39,23 @@ const getTextStream = () => {
   });
 };
 
+const watchFile = () => {
+  fetch("api/stream/watch").then((res) => {
+    const reader = res.body?.getReader();
+
+    readText(reader, (value) => {
+      const data = (value as string).split("\n");
+      console.log("watch : ", data);
+      fileWatchArray.value.push(...data);
+    });
+  });
+};
+const endWatch = () => {
+  fetch("api/stream/watch/end").then((res) => {
+    console.log("");
+  });
+};
+
 onMounted(() => {});
 </script>
 
@@ -61,6 +78,16 @@ onMounted(() => {});
     <source src="api/stream/video" type="video/mp4" />
   </video>
   <img src="api/stream/image" alt="" />
+  <hr />
+  <h2>File Modify Watch ( 수정된 파일 내용 감지)</h2>
+  <div class="border flex gap-4">
+    <button @click="watchFile">Watch</button>
+    <button @click="endWatch">End</button>
+  </div>
+  <div class="border mt-4">
+    <h2>변경된 데이터 :</h2>
+    <p v-for="data in fileWatchArray" v-html="data"></p>
+  </div>
 </template>
 
 <style lang="scss" scoped></style>

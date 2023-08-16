@@ -1,10 +1,19 @@
 import { Injectable, StreamableFile } from '@nestjs/common';
 import { Response } from 'express';
-import { createReadStream, readFile } from 'fs';
+import {
+  createReadStream,
+  readFile,
+  watchFile,
+  readFileSync,
+  watch,
+  FSWatcher,
+} from 'fs';
 import { resolve, join } from 'path';
 
 @Injectable()
 export class StreamService {
+  wathResponse: Response;
+  StateWatcher: FSWatcher;
   constructor() {}
 
   async streamText(res: Response) {
@@ -41,5 +50,36 @@ export class StreamService {
         }
       },
     );
+  }
+
+  async chageFileWatch(res: Response) {
+    if (this.wathResponse) return;
+
+    console.log('watching');
+    this.wathResponse = res;
+
+    const filePath = join(process.cwd(), 'watch.txt');
+    let oldLength = 0;
+    this.StateWatcher = watch(filePath, (curr, prev) => {
+      const data = readFileSync(filePath, 'utf-8');
+      // console.log('---------------');
+      // console.log('cahgeFile_length', data.length);
+      // console.log('파일 변경 감지');
+      // console.log('---------------');
+
+      const changeData = data.slice(oldLength, data.length);
+      console.log('변경된 내용 :', changeData);
+
+      oldLength = data.length;
+      this.wathResponse.write(changeData);
+    });
+  }
+
+  async watchEnd() {
+    console.log('watch 중단');
+    this.wathResponse && this.wathResponse.end();
+    this.StateWatcher && this.StateWatcher.close();
+    this.wathResponse = null;
+    return '중단';
   }
 }
