@@ -1,13 +1,29 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { IoAdapter } from '@nestjs/platform-socket.io';
+import * as cookieParser from 'cookie-parser';
 
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
+const whitelist = ['https://mylocal.juchandev.xyz'];
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.enableCors({});
+  app.enableCors({
+    // cors 문제
+    // cookie
+    // ...
+    origin: (origin, callback) => {
+      if (whitelist.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+  });
 
+  app.use(cookieParser());
   app.useWebSocketAdapter(new IoAdapter(app));
 
   const config = new DocumentBuilder()

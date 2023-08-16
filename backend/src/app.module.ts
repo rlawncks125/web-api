@@ -7,6 +7,7 @@ import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './user/user.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { StreamModule } from './stream/stream.module';
+import { CookieModule } from './cookie/cookie.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { StreamModule } from './stream/stream.module';
     UserModule,
     PrismaModule,
     StreamModule,
+    CookieModule,
   ],
   controllers: [AppController],
   providers: [AppService],
