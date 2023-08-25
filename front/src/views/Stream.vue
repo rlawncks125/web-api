@@ -4,6 +4,7 @@ import { onMounted, ref } from "vue";
 const textBuffer = ref("");
 const videoRef = ref<HTMLVideoElement>();
 const fileWatchArray = ref("");
+const imageRef = ref<HTMLImageElement>();
 
 const readText = (
   reader: ReadableStreamDefaultReader<Uint8Array> | undefined,
@@ -59,6 +60,37 @@ const dataToByline = (data: string) => {
   return data.split("\n");
 };
 
+const getImage = () => {
+  fetch("api/stream/image")
+    .then((res) => res.body)
+    .then((body) => {
+      const reader = body!.getReader();
+      return new ReadableStream({
+        start(controller) {
+          return pump();
+          function pump(): any {
+            // 스트림의 다음 Chunk에 대한 액세스를 제공하는 psomise를 리턴한다.
+            return reader.read().then(({ done, value }) => {
+              // 더이상 읽을 데이터 조각이 없을때 스트림을 닫는다
+              if (done) {
+                controller.close();
+                return;
+              }
+              // 데이터 조각을 새로운 스트림(새로 만드는 커스텀 스트림)에 넣는다.
+              controller.enqueue(value);
+              return pump();
+            });
+          }
+        },
+      });
+    })
+    .then((stream) => new Response(stream))
+    .then((response) => response.blob())
+    .then((blob) => URL.createObjectURL(blob))
+    .then((url) => console.log((imageRef.value!.src = url)))
+    .catch((err) => console.error(err));
+};
+
 onMounted(() => {});
 </script>
 
@@ -90,6 +122,12 @@ onMounted(() => {});
   <div class="border mt-4">
     <h2>변경된 데이터 :</h2>
     <p v-for="data in dataToByline(fileWatchArray)" v-html="data"></p>
+  </div>
+  <div>
+    <button @click="getImage">이미지 불러오기</button>
+    <div>
+      <img ref="imageRef" />
+    </div>
   </div>
 </template>
 

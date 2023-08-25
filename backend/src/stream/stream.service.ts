@@ -54,6 +54,14 @@ export class StreamService {
     );
   }
 
+  async getImage(res: Response) {
+    const filePath = join(process.cwd(), 'uploads/pngegg.png');
+
+    const file = createReadStream(resolve(filePath));
+    res.header('Content-Type', 'image/png');
+    file.pipe(res);
+  }
+
   async chageFileWatch(res: Response) {
     if (this.wathResponse) return;
 

@@ -20,6 +20,11 @@ export class StreamController {
     return this.streamService.download(respone);
   }
 
+  @Get('image')
+  getImage(@Res() response: Response) {
+    return this.streamService.getImage(response);
+  }
+
   @Get('watch')
   watchFile(@Res() respone: Response) {
     return this.streamService.chageFileWatch(respone);
