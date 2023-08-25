@@ -1,6 +1,7 @@
-import { Controller, Get, Res } from '@nestjs/common';
-import { Response, response } from 'express';
+import { Controller, Get, Res, Sse } from '@nestjs/common';
+import { Response } from 'express';
 import { StreamService } from './stream.service';
+import { Observable, Subject, interval, map } from 'rxjs';
 
 @Controller('stream')
 export class StreamController {
@@ -33,5 +34,21 @@ export class StreamController {
   @Get('watch/end')
   endWatch() {
     return this.streamService.watchEnd();
+  }
+
+  @Sse('sse')
+  sse(): Observable<any> {
+    // 1 방법
+    // return interval(2000).pipe(
+    //   map((number) => ({ data: { date: 'hllow :' + number } })),
+    // );
+
+    // 2방법
+    const subject = new Subject();
+    setInterval(() => {
+      subject.next({ hllo: 'hllo next 데이터' });
+    }, 2000);
+
+    return subject.pipe(map((data) => ({ data })));
   }
 }

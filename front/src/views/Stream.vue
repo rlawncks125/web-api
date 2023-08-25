@@ -60,6 +60,7 @@ const dataToByline = (data: string) => {
   return data.split("\n");
 };
 
+// "https://res.cloudinary.com/dhdq4v4ar/image/upload/v1675403830/back-Portfolio/ixz0pvy7zqtdugwyh0u6.jpg"
 const getImage = () => {
   fetch("api/stream/image")
     .then((res) => res.body)
