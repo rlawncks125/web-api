@@ -5,7 +5,7 @@ import * as cookieParser from 'cookie-parser';
 
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
-const whitelist = ['https://mylocal.juchandev.xyz'];
+const whitelist = ['https://mylocal.juchandev.xyz', '0.0.0.0'];
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,11 +17,12 @@ async function bootstrap() {
       if (whitelist.indexOf(origin) !== -1) {
         callback(null, true);
       } else {
-        callback(new Error('Not allowed by CORS'));
+        callback(new Error('Not allowed by CORS' + origin));
       }
     },
     credentials: true,
   });
+  // app.enableCors({});
 
   app.use(cookieParser());
   app.useWebSocketAdapter(new IoAdapter(app));

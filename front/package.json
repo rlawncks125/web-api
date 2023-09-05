@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "eruda": "^2.11.2",
+    "marked": "^8.0.0",
     "pinia": "^2.0.28",
     "sass": "^1.58.0",
     "socket.io-client": "^4.6.1",
@@ -19,6 +20,7 @@
     "webrtc-adapter": "^8.2.0"
   },
   "devDependencies": {
+    "@tailwindcss/typography": "^0.5.10",
     "@types/node": "^18.11.12",
     "@vitejs/plugin-vue": "^4.0.0",
     "@vue/tsconfig": "^0.1.3",

@@ -8,6 +8,7 @@ import { UserModule } from './user/user.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { StreamModule } from './stream/stream.module';
 import { CookieModule } from './cookie/cookie.module';
+import { OpenaiModule } from './openai/openai.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { CookieModule } from './cookie/cookie.module';
     PrismaModule,
     StreamModule,
     CookieModule,
+    OpenaiModule,
   ],
   controllers: [AppController],
   providers: [AppService],
