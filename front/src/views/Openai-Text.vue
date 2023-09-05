@@ -3,17 +3,23 @@ import { readTextByBodyReader } from "@/utils/Stream";
 import { ref } from "vue";
 
 import { marked } from "marked";
+import { storeToRefs } from "pinia";
+
+import { useOpenaiCache } from "@/stores/openai-cache";
 
 const openaiText = ref("");
 const openaiTextResult = ref("");
 
 const renderRef = ref<HTMLElement>();
 
-const markdown = ref<string[]>([]);
+// const markdown = ref<string[]>([]);
+
+const { itemLists } = storeToRefs(useOpenaiCache());
+const { setItem, clear: clearItem } = useOpenaiCache();
 
 const chatGPTCallModelText = () => {
   if (openaiText.value === "") return;
-  markdown.value.push(openaiText.value);
+  setItem(openaiText.value);
 
   fetch("api/openai/text", {
     method: "Post",
@@ -34,7 +40,7 @@ const chatGPTCallModelText = () => {
       },
       () => {
         openaiTextResult.value += "<br />";
-        markdown.value.push(openaiTextResult.value);
+        setItem(openaiTextResult.value);
         openaiTextResult.value = "";
       }
     );
@@ -48,7 +54,24 @@ const chatGPTCallModelText = () => {
     <br />
 
     <h1 class="text-[2rem]">텍스트</h1>
-    <form class="mx-auto" @sumbit.prevent="chatGPTCallModelText">
+
+    <div>
+      <p>Lists</p>
+      <div
+        class="prose text-left mx-auto result-list"
+        v-for="item in itemLists"
+        v-html="marked(item)"
+      ></div>
+    </div>
+    <div>
+      <p>text Render :</p>
+      <div
+        ref="renderRef"
+        class="prose text-left mx-auto my-2 border-t-2 bg-blue-200"
+        v-html="marked(openaiTextResult)"
+      ></div>
+    </div>
+    <form class="mx-auto">
       <label for="text-promt">prompt : </label>
       <br />
       <textarea
@@ -60,23 +83,9 @@ const chatGPTCallModelText = () => {
         v-model="openaiText"
       ></textarea>
 
-      <button class="border p-2 my-2">호출</button>
-      <div>
-        <p>Lists</p>
-        <div
-          class="prose text-left mx-auto result-list"
-          v-for="item in markdown"
-          v-html="marked(item)"
-        ></div>
-      </div>
-      <div>
-        <p>text Render :</p>
-        <div
-          ref="renderRef"
-          class="prose text-left mx-auto py-4 my-2 border-t-2 bg-blue-200"
-          v-html="marked(openaiTextResult)"
-        ></div>
-      </div>
+      <button class="border p-2 my-2" @click.prevent="chatGPTCallModelText">
+        호출
+      </button>
     </form>
   </div>
 </template>
