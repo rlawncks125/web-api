@@ -16,9 +16,12 @@ export class OpenaiService {
     });
   }
 
-  async openaiText(res: Response, { content }: { content: string }) {
+  async openaiText(
+    res: Response,
+    { content, model }: { content: string; model: string },
+  ) {
     const chatCompletion = await this.openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
+      model,
       messages: [{ role: 'user', content }],
       max_tokens: 1000,
       stream: true,

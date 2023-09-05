@@ -9,6 +9,8 @@ import { useOpenaiCache } from "@/stores/openai-cache";
 
 const openaiText = ref("");
 const openaiTextResult = ref("");
+const gptModel = ref("gpt-3.5-turbo");
+const isStream = ref(false);
 
 const renderRef = ref<HTMLElement>();
 
@@ -18,8 +20,9 @@ const { itemLists } = storeToRefs(useOpenaiCache());
 const { setItem, clear: clearItem } = useOpenaiCache();
 
 const chatGPTCallModelText = () => {
-  if (openaiText.value === "") return;
+  if (openaiText.value === "" || gptModel.value === "") return;
   setItem(openaiText.value);
+  isStream.value = true;
 
   fetch("api/openai/text", {
     method: "Post",
@@ -28,6 +31,7 @@ const chatGPTCallModelText = () => {
     },
     body: JSON.stringify({
       content: openaiText.value,
+      model: gptModel.value,
     }),
   }).then((res) => {
     openaiText.value = "";
@@ -42,6 +46,7 @@ const chatGPTCallModelText = () => {
         openaiTextResult.value += "<br />";
         setItem(openaiTextResult.value);
         openaiTextResult.value = "";
+        isStream.value = false;
       }
     );
   });
@@ -71,11 +76,19 @@ const chatGPTCallModelText = () => {
         v-html="marked(openaiTextResult)"
       ></div>
     </div>
-    <form class="mx-auto">
-      <label for="text-promt">prompt : </label>
+
+    <div class="mt-[20rem]"></div>
+    <form
+      class="w-[full] h-[15rem] mx-auto fixed bottom-0 left-0 right-0 flex flex-col bg-white border-t-2 border-black"
+    >
+      <select v-model="gptModel" class="border-b-2 border-black">
+        <option value="gpt-4">gpt-4</option>
+        <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+      </select>
       <br />
       <textarea
-        class="border"
+        placeholder="여기에 질문하세요"
+        class="border w-full"
         name=""
         id="text-promt"
         cols="30"
@@ -83,9 +96,18 @@ const chatGPTCallModelText = () => {
         v-model="openaiText"
       ></textarea>
 
-      <button class="border p-2 my-2" @click.prevent="chatGPTCallModelText">
-        호출
-      </button>
+      <div>
+        <div v-if="isStream" class="w-full text-center border p-2 my-2">
+          입력중..
+        </div>
+        <button
+          v-else
+          class="border p-2 my-2 w-full"
+          @click.prevent="chatGPTCallModelText"
+        >
+          호출
+        </button>
+      </div>
     </form>
   </div>
 </template>
