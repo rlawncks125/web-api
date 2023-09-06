@@ -18,11 +18,11 @@ export class OpenaiService {
 
   async openaiText(
     res: Response,
-    { content, model }: { content: string; model: string },
+    { messages, model }: { messages: any[]; model: string },
   ) {
     const chatCompletion = await this.openai.chat.completions.create({
       model,
-      messages: [{ role: 'user', content }],
+      messages,
       max_tokens: 1000,
       stream: true,
     });

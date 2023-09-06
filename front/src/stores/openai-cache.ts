@@ -1,12 +1,17 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
 
+export interface Prompt {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
+
 export const useOpenaiCache = defineStore(
   "openai-cache",
   () => {
-    const itemLists = ref<string[]>([]);
+    const itemLists = ref<Prompt[][]>([]);
 
-    const setItem = (item: string) => {
+    const setItem = (item: Prompt[]) => {
       itemLists.value.push(item);
     };
 

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { readTextByBodyReader } from "@/utils/Stream";
-import { ref } from "vue";
+import { onMounted, ref, toRaw } from "vue";
 
 import { marked } from "marked";
 import { storeToRefs } from "pinia";
 
-import { useOpenaiCache } from "@/stores/openai-cache";
+import { useOpenaiCache, type Prompt } from "@/stores/openai-cache";
 
 const openaiText = ref("");
 const openaiTextResult = ref("");
@@ -14,15 +14,37 @@ const isStream = ref(false);
 
 const renderRef = ref<HTMLElement>();
 
-// const markdown = ref<string[]>([]);
+const checkLists = ref<any[]>([]);
+const concept = ref();
 
 const { itemLists } = storeToRefs(useOpenaiCache());
 const { setItem, clear: clearItem } = useOpenaiCache();
 
 const chatGPTCallModelText = () => {
   if (openaiText.value === "" || gptModel.value === "") return;
-  setItem(openaiText.value);
+
+  const prompt: Prompt[] = [];
+
+  prompt.push({ role: "user", content: openaiText.value });
   isStream.value = true;
+
+  // 선택된 Prompt 찾기
+  const findLists = itemLists.value.filter((v, i) =>
+    checkLists.value.includes(i)
+  );
+  const selectLists = findLists.map((v) => toRaw(v));
+  // @ts-ignore
+  const selectPrompt = selectLists.flat(2);
+
+  const pushPrompt: Prompt[] = [
+    {
+      role: "system",
+      content: concept.value || "당신은 조수입니다.",
+    },
+    ...selectPrompt,
+    prompt[0],
+  ];
+  console.log(pushPrompt);
 
   fetch("api/openai/text", {
     method: "Post",
@@ -30,53 +52,95 @@ const chatGPTCallModelText = () => {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      content: openaiText.value,
       model: gptModel.value,
+      messages: pushPrompt,
     }),
   }).then((res) => {
-    openaiText.value = "";
     const reader = res.body?.getReader();
     readTextByBodyReader(
       reader,
       (value) => {
         openaiTextResult.value += value;
-        renderRef.value?.scrollIntoView();
+        renderRef.value?.scrollIntoView({
+          inline: "end",
+        });
       },
       () => {
         openaiTextResult.value += "<br />";
-        setItem(openaiTextResult.value);
+        prompt.push({ role: "assistant", content: openaiTextResult.value });
+        setItem(prompt);
+
+        openaiText.value = "";
         openaiTextResult.value = "";
+
         isStream.value = false;
+        checkLists.value.length = 0;
       }
     );
   });
 };
+
+onMounted(() => {});
 </script>
 
 <template>
   <div class="text-center">
     <div>openaiText</div>
     <br />
-
-    <h1 class="text-[2rem]">텍스트</h1>
+    <div class="flex justify-center gap-2">
+      <h1 class="text-[2rem]">텍스트</h1>
+      <button @click="clearItem" class="border p-2 bg-red-500 text-white">
+        초기화
+      </button>
+    </div>
 
     <div>
       <p>Lists</p>
-      <div
-        class="prose text-left mx-auto result-list"
-        v-for="item in itemLists"
-        v-html="marked(item)"
-      ></div>
-    </div>
-    <div>
-      <p>text Render :</p>
-      <div
-        ref="renderRef"
-        class="prose text-left mx-auto my-2 border-t-2 bg-blue-200"
-        v-html="marked(openaiTextResult)"
-      ></div>
+      <div class="flex flex-col justify-center max-w-[50vw] mx-auto">
+        <!-- 요청 기록 List -->
+        <div v-for="([user, assistant], key) in itemLists">
+          <div class="checkbox-wrapper-10">
+            <input
+              class="tgl tgl-flip"
+              type="checkbox"
+              :id="`list-${key}`"
+              :value="key"
+              v-model="checkLists"
+            />
+            <label
+              class="tgl-btn"
+              :for="`list-${key}`"
+              data-tg-off="Nope"
+              data-tg-on="Yeah!"
+            ></label>
+          </div>
+          <div
+            class="result-list"
+            :class="user.role"
+            v-html="marked(user.content)"
+          ></div>
+
+          <div
+            class="result-list"
+            :class="assistant.role"
+            v-html="marked(assistant.content)"
+          ></div>
+        </div>
+        <!-- 요청 Render -->
+        <div v-if="isStream">
+          <div class="result-list user">
+            <p>{{ openaiText }}</p>
+          </div>
+          <div
+            ref="renderRef"
+            class="result-list assistant my-2 border-t-2"
+            v-html="marked(openaiTextResult)"
+          ></div>
+        </div>
+      </div>
     </div>
 
+    <!-- 입력 From -->
     <div class="mt-[20rem]"></div>
     <form
       class="w-[full] h-[15rem] mx-auto fixed bottom-0 left-0 right-0 flex flex-col bg-white border-t-2 border-black"
@@ -85,7 +149,17 @@ const chatGPTCallModelText = () => {
         <option value="gpt-4">gpt-4</option>
         <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
       </select>
-      <br />
+
+      <div class="w-full flex justify-start">
+        <label for="concept">컨셉 :</label>
+        <input
+          class="border flex-1 w-full"
+          type="text"
+          id="concept"
+          v-model="concept"
+        />
+      </div>
+
       <textarea
         placeholder="여기에 질문하세요"
         class="border w-full"
@@ -114,22 +188,127 @@ const chatGPTCallModelText = () => {
 
 <style lang="scss" scoped>
 .result-list {
-  @apply py-4 my-2 border-t-2 border-b-2 px-2;
+  @apply py-4 my-2 border-t-2 border-b-2 px-2 prose text-left;
 
-  &:nth-child(even) {
+  &.user {
     @apply bg-green-200;
   }
-  &:nth-child(2n)::before {
+  &.user::before {
     display: inline-block;
     content: "Q :";
   }
 
-  &:nth-child(odd) {
+  &.assistant {
     @apply bg-blue-200;
   }
-  &:nth-child(odd)::before {
+  &.assistant::before {
     display: inline-block;
     content: "A :";
   }
+}
+
+.checkbox-wrapper-10 .tgl {
+  display: none;
+}
+.checkbox-wrapper-10 .tgl,
+.checkbox-wrapper-10 .tgl:after,
+.checkbox-wrapper-10 .tgl:before,
+.checkbox-wrapper-10 .tgl *,
+.checkbox-wrapper-10 .tgl *:after,
+.checkbox-wrapper-10 .tgl *:before,
+.checkbox-wrapper-10 .tgl + .tgl-btn {
+  box-sizing: border-box;
+}
+.checkbox-wrapper-10 .tgl::-moz-selection,
+.checkbox-wrapper-10 .tgl:after::-moz-selection,
+.checkbox-wrapper-10 .tgl:before::-moz-selection,
+.checkbox-wrapper-10 .tgl *::-moz-selection,
+.checkbox-wrapper-10 .tgl *:after::-moz-selection,
+.checkbox-wrapper-10 .tgl *:before::-moz-selection,
+.checkbox-wrapper-10 .tgl + .tgl-btn::-moz-selection,
+.checkbox-wrapper-10 .tgl::selection,
+.checkbox-wrapper-10 .tgl:after::selection,
+.checkbox-wrapper-10 .tgl:before::selection,
+.checkbox-wrapper-10 .tgl *::selection,
+.checkbox-wrapper-10 .tgl *:after::selection,
+.checkbox-wrapper-10 .tgl *:before::selection,
+.checkbox-wrapper-10 .tgl + .tgl-btn::selection {
+  background: none;
+}
+.checkbox-wrapper-10 .tgl + .tgl-btn {
+  outline: 0;
+  display: block;
+  width: 4em;
+  height: 2em;
+  position: relative;
+  cursor: pointer;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+.checkbox-wrapper-10 .tgl + .tgl-btn:after,
+.checkbox-wrapper-10 .tgl + .tgl-btn:before {
+  position: relative;
+  display: block;
+  content: "";
+  width: 50%;
+  height: 100%;
+}
+.checkbox-wrapper-10 .tgl + .tgl-btn:after {
+  left: 0;
+}
+.checkbox-wrapper-10 .tgl + .tgl-btn:before {
+  display: none;
+}
+.checkbox-wrapper-10 .tgl:checked + .tgl-btn:after {
+  left: 50%;
+}
+
+.checkbox-wrapper-10 .tgl-flip + .tgl-btn {
+  padding: 2px;
+  transition: all 0.2s ease;
+  font-family: sans-serif;
+  perspective: 100px;
+}
+.checkbox-wrapper-10 .tgl-flip + .tgl-btn:after,
+.checkbox-wrapper-10 .tgl-flip + .tgl-btn:before {
+  display: inline-block;
+  transition: all 0.4s ease;
+  width: 100%;
+  text-align: center;
+  position: absolute;
+  line-height: 2em;
+  font-weight: bold;
+  color: #fff;
+  position: absolute;
+  top: 0;
+  left: 0;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  border-radius: 4px;
+}
+.checkbox-wrapper-10 .tgl-flip + .tgl-btn:after {
+  content: attr(data-tg-on);
+  background: #02c66f;
+  transform: rotateY(-180deg);
+}
+.checkbox-wrapper-10 .tgl-flip + .tgl-btn:before {
+  background: #ff3a19;
+  content: attr(data-tg-off);
+}
+.checkbox-wrapper-10 .tgl-flip + .tgl-btn:active:before {
+  transform: rotateY(-20deg);
+}
+.checkbox-wrapper-10 .tgl-flip:checked + .tgl-btn:before {
+  transform: rotateY(180deg);
+}
+.checkbox-wrapper-10 .tgl-flip:checked + .tgl-btn:after {
+  transform: rotateY(0);
+  left: 0;
+  background: #7fc6a6;
+}
+.checkbox-wrapper-10 .tgl-flip:checked + .tgl-btn:active:after {
+  transform: rotateY(20deg);
 }
 </style>
