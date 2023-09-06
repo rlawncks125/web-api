@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { readTextByBodyReader } from "@/utils/Stream";
+import { readStreamTextByBodyReader } from "@/utils/Stream";
 import { onMounted, ref, toRaw } from "vue";
 
 import { marked } from "marked";
@@ -12,7 +12,7 @@ const openaiTextResult = ref("");
 const gptModel = ref("gpt-3.5-turbo");
 const isStream = ref(false);
 
-const renderRef = ref<HTMLElement>();
+const bottomEndRef = ref<HTMLElement>();
 
 const checkLists = ref<any[]>([]);
 const concept = ref();
@@ -20,21 +20,21 @@ const concept = ref();
 const { itemLists } = storeToRefs(useOpenaiCache());
 const { setItem, clear: clearItem } = useOpenaiCache();
 
-const chatGPTCallModelText = () => {
+const onClickCallChatGPT = () => {
   if (openaiText.value === "" || gptModel.value === "") return;
 
-  const prompt: Prompt[] = [];
+  const newPrompt: Prompt[] = [];
 
-  prompt.push({ role: "user", content: openaiText.value });
+  newPrompt.push({ role: "user", content: openaiText.value });
   isStream.value = true;
 
   // 선택된 Prompt 찾기
-  const findLists = itemLists.value.filter((v, i) =>
+  const selectLists = itemLists.value.filter((v, i) =>
     checkLists.value.includes(i)
   );
-  const selectLists = findLists.map((v) => toRaw(v));
+
   // @ts-ignore
-  const selectPrompt = selectLists.flat(2);
+  const selectPrompt = selectLists.map(toRaw).flat(2);
 
   const pushPrompt: Prompt[] = [
     {
@@ -42,8 +42,9 @@ const chatGPTCallModelText = () => {
       content: concept.value || "당신은 조수입니다.",
     },
     ...selectPrompt,
-    prompt[0],
+    newPrompt[0],
   ];
+
   console.log(pushPrompt);
 
   fetch("api/openai/text", {
@@ -55,29 +56,33 @@ const chatGPTCallModelText = () => {
       model: gptModel.value,
       messages: pushPrompt,
     }),
-  }).then((res) => {
-    const reader = res.body?.getReader();
-    readTextByBodyReader(
-      reader,
-      (value) => {
-        openaiTextResult.value += value;
-        renderRef.value?.scrollIntoView({
-          inline: "end",
-        });
-      },
-      () => {
-        openaiTextResult.value += "<br />";
-        prompt.push({ role: "assistant", content: openaiTextResult.value });
-        setItem(prompt);
+  })
+    .then((res) => {
+      const reader = res.body?.getReader();
+      readStreamTextByBodyReader(
+        reader,
+        function onReadStream(value) {
+          openaiTextResult.value += value;
+          bottomEndRef.value?.scrollIntoView({
+            inline: "end",
+          });
+        },
+        function onDone() {
+          newPrompt.push({
+            role: "assistant",
+            content: openaiTextResult.value,
+          });
+          setItem(newPrompt);
 
-        openaiText.value = "";
-        openaiTextResult.value = "";
+          openaiText.value = "";
+          openaiTextResult.value = "";
 
-        isStream.value = false;
-        checkLists.value.length = 0;
-      }
-    );
-  });
+          isStream.value = false;
+          checkLists.value.length = 0;
+        }
+      );
+    })
+    .catch(console.error);
 };
 
 onMounted(() => {});
@@ -132,7 +137,6 @@ onMounted(() => {});
             <p>{{ openaiText }}</p>
           </div>
           <div
-            ref="renderRef"
             class="result-list assistant my-2 border-t-2"
             v-html="marked(openaiTextResult)"
           ></div>
@@ -141,7 +145,7 @@ onMounted(() => {});
     </div>
 
     <!-- 입력 From -->
-    <div class="mt-[20rem]"></div>
+    <div ref="bottomEndRef" class="mt-[20rem]"></div>
     <form
       class="w-[full] h-[15rem] mx-auto fixed bottom-0 left-0 right-0 flex flex-col bg-white border-t-2 border-black"
     >
@@ -177,7 +181,7 @@ onMounted(() => {});
         <button
           v-else
           class="border p-2 my-2 w-full"
-          @click.prevent="chatGPTCallModelText"
+          @click.prevent="onClickCallChatGPT"
         >
           호출
         </button>

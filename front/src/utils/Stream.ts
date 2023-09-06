@@ -1,6 +1,6 @@
-export function readTextByBodyReader(
+export function readStreamTextByBodyReader(
   reader: ReadableStreamDefaultReader<Uint8Array> | undefined,
-  callback?: (value: any) => void,
+  readCallback?: (value: any) => void,
   doneCallback?: () => void
 ) {
   if (!reader) return;
@@ -13,12 +13,12 @@ export function readTextByBodyReader(
     }
 
     // 처리
-    if (callback) {
+    if (readCallback) {
       const decoder = new TextDecoder();
-      callback(decoder.decode(value));
+      readCallback(decoder.decode(value));
     }
 
     // 다음 stream 호출
-    readTextByBodyReader(reader, callback, doneCallback);
+    readStreamTextByBodyReader(reader, readCallback, doneCallback);
   });
 }
