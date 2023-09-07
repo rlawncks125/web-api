@@ -18,7 +18,7 @@ const checkLists = ref<any[]>([]);
 const concept = ref();
 
 const { itemLists } = storeToRefs(useOpenaiCache());
-const { setItem, clear: clearItem } = useOpenaiCache();
+const { setItem, clear: clearItem, deleteItem } = useOpenaiCache();
 
 const onClickCallChatGPT = () => {
   if (openaiText.value === "" || gptModel.value === "") return;
@@ -59,6 +59,7 @@ const onClickCallChatGPT = () => {
   })
     .then((res) => {
       const reader = res.body?.getReader();
+
       readStreamTextByBodyReader(
         reader,
         function onReadStream(value) {
@@ -103,21 +104,31 @@ onMounted(() => {});
       <p>Lists</p>
       <div class="flex flex-col justify-center max-w-[50vw] mx-auto">
         <!-- 요청 기록 List -->
-        <div v-for="([user, assistant], key) in itemLists">
-          <div class="checkbox-wrapper-10">
-            <input
-              class="tgl tgl-flip"
-              type="checkbox"
-              :id="`list-${key}`"
-              :value="key"
-              v-model="checkLists"
-            />
-            <label
-              class="tgl-btn"
-              :for="`list-${key}`"
-              data-tg-off="Nope"
-              data-tg-on="Yeah!"
-            ></label>
+        <div v-for="([user, assistant], index) in itemLists">
+          <div class="flex justify-between">
+            <div class="checkbox-wrapper-10">
+              <input
+                class="tgl tgl-flip"
+                type="checkbox"
+                :id="`list-${index}`"
+                :value="index"
+                v-model="checkLists"
+              />
+              <label
+                class="tgl-btn"
+                :for="`list-${index}`"
+                data-tg-off="Nope"
+                data-tg-on="Yeah!"
+              ></label>
+            </div>
+            <div>
+              <button
+                class="bg-red-400 text-white p-1 px-2 rounded-md font-bold"
+                @click="deleteItem(index)"
+              >
+                Delete
+              </button>
+            </div>
           </div>
           <div
             class="result-list"
@@ -192,7 +203,7 @@ onMounted(() => {});
 
 <style lang="scss" scoped>
 .result-list {
-  @apply py-4 my-2 border-t-2 border-b-2 px-2 prose text-left;
+  @apply py-4 my-2 border-t-2 border-b-2 px-2 prose text-left max-w-full;
 
   &.user {
     @apply bg-green-200;
@@ -298,7 +309,8 @@ onMounted(() => {});
   transform: rotateY(-180deg);
 }
 .checkbox-wrapper-10 .tgl-flip + .tgl-btn:before {
-  background: #ff3a19;
+  @apply bg-yellow-500;
+
   content: attr(data-tg-off);
 }
 .checkbox-wrapper-10 .tgl-flip + .tgl-btn:active:before {
