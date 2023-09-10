@@ -177,7 +177,7 @@ onMounted(() => {});
 
       <textarea
         placeholder="여기에 질문하세요"
-        class="border w-full"
+        class="border w-full p-2"
         name=""
         id="text-promt"
         cols="30"

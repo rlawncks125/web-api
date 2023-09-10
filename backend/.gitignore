@@ -39,4 +39,6 @@ lerna-debug.log*
 
 prisma.migrations
 
+# 저장파일
 uploads
+thumbnails

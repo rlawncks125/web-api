@@ -9,6 +9,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { StreamModule } from './stream/stream.module';
 import { CookieModule } from './cookie/cookie.module';
 import { OpenaiModule } from './openai/openai.module';
+import { MediaServerModule } from './media-server/media-server.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { OpenaiModule } from './openai/openai.module';
     StreamModule,
     CookieModule,
     OpenaiModule,
+    MediaServerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -5,3 +5,5 @@ tls:
       keyFile: "/etc/letsencrypt/mylocal/live/mylocal.juchandev.xyz/privkey.pem"
     - certFile: "/etc/letsencrypt/myapi/live/myapi.juchandev.xyz/fullchain.pem"
       keyFile: "/etc/letsencrypt/myapi/live/myapi.juchandev.xyz/privkey.pem"
+    - certFile: "/etc/letsencrypt/live/live/live.juchandev.xyz/fullchain.pem"
+      keyFile: "/etc/letsencrypt/live/live/live.juchandev.xyz/privkey.pem"

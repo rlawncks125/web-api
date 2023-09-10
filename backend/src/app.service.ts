@@ -5,16 +5,16 @@ import * as nodemailer from 'nodemailer';
 export class AppService {
   #transporter: nodemailer.Transporter;
   constructor() {
-    this.#transporter = nodemailer.createTransport({
-      name: '호스팅거 메일러 테스트 <jucahndev.xyz>',
-      host: 'smtp.hostinger.com',
-      port: 465,
-      secure: true,
-      auth: {
-        user: process.env.HOSTINGER_EMIAL,
-        pass: process.env.HOSTINGER_PASS,
-      },
-    });
+    // this.#transporter = nodemailer.createTransport({
+    //   name: '호스팅거 메일러 테스트 <jucahndev.xyz>',
+    //   host: 'smtp.hostinger.com',
+    //   port: 465,
+    //   secure: true,
+    //   auth: {
+    //     user: process.env.HOSTINGER_EMIAL,
+    //     pass: process.env.HOSTINGER_PASS,
+    //   },
+    // });
   }
 
   getHello(): string {

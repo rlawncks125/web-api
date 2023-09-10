@@ -17,7 +17,7 @@ pinia.use(piniaPluginPersistedstate);
 
 app.use(pinia);
 app.use(router);
-// app.use(eruda);
+app.use(eruda);
 app.use(WebRPCAdapter);
 
 app.mount("#app");

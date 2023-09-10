@@ -24,6 +24,7 @@ services:
       # SSL
       - ../domain-ssl/mylocal/conf:/etc/letsencrypt/mylocal
       - ../domain-ssl/myapi/conf:/etc/letsencrypt/myapi
+      - ../domain-ssl/live/conf:/etc/letsencrypt/live
     container_name: web-api-traefik
 
   backend:
@@ -33,6 +34,9 @@ services:
       dockerfile: dockerfile
     ports:
       - 3010:3010
+      # media-server
+      - 3034:3034
+      - 1935:1935
     environment:
       - PORT=3010
     env_file:
@@ -44,14 +48,22 @@ services:
     labels:
       - "traefik.enable=true"
       #   # https redirect 도메인별
-      #   # - traefik.http.routers.backend.entrypoints=web
-      #   # - "traefik.http.routers.backend.rule=Host(`myapi.juchandev.xyz`)"
-      #   # - "traefik.http.routers.backend.middlewares=redirect-https"
-      #   # - "traefik.http.middlewares.redirect-https.redirectscheme.scheme=https"
+      # - traefik.http.routers.backend.entrypoints=web
+      # - "traefik.http.routers.backend.rule=Host(`myapi.juchandev.xyz`)"
+      # - "traefik.http.routers.backend.middlewares=redirect-https"
+      # - "traefik.http.middlewares.redirect-https.redirectscheme.scheme=https"
 
       - traefik.http.routers.backend-https.entrypoints=websecure
       - traefik.http.routers.backend-https.rule=Host(`myapi.juchandev.xyz`)
+      - traefik.http.routers.backend-https.service=backend-https
       - traefik.http.routers.backend-https.tls=true
+      - traefik.http.services.backend-https.loadbalancer.server.port=3010
+
+      - traefik.http.routers.live.entrypoints=websecure
+      - "traefik.http.routers.live.rule=Host(`live.juchandev.xyz`)"
+      - traefik.http.routers.live.service=live
+      - traefik.http.routers.live.tls=true
+      - traefik.http.services.live.loadbalancer.server.port=3034
     depends_on:
       - traefik
     container_name: web-api-backend
@@ -97,3 +109,8 @@ services:
       - traefik
       - backend
     container_name: web-api-DB
+# sudo docker run -it --rm \
+# -v $(pwd)/../domain-ssl/myapi/conf:/etc/letsencrypt \
+# -v $(pwd)/../domain-ssl/myapi/logs:/var/log/letsencrypt \
+# -v $(pwd)/../domain-ssl/myapi/www:/var/www/certbot \
+# certbot/certbot certonly -d myapi.juchandev.xyz --manual --preferred-challenges dns --server https://acme-v02.api.letsencrypt.org/directory
