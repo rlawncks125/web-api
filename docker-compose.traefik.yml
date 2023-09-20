@@ -109,6 +109,21 @@ services:
       - traefik
       - backend
     container_name: web-api-DB
+
+  turnserver:
+    image: coturn/coturn
+    ports:
+      - 3478:3478
+      - 3478:3478/udp
+      - 3479:3479
+      - 3479:3479/udp
+    volumes:
+      - ./turn/my.conf:/etc/coturn/turnserver.conf
+    labels:
+      - "traefik.enable=true"
+      - traefik.http.routers.turnserver.entrypoints=web
+      - "traefik.http.routers.turnserver.rule=Host(`stun.juchandev.xyz`)"
+    container_name: web_api_turn_server
 # sudo docker run -it --rm \
 # -v $(pwd)/../domain-ssl/myapi/conf:/etc/letsencrypt \
 # -v $(pwd)/../domain-ssl/myapi/logs:/var/log/letsencrypt \

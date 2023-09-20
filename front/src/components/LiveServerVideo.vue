@@ -4,7 +4,9 @@ import { onMounted, ref } from "vue";
 const props = defineProps<{
   streamName: string;
 }>();
-const emits = defineEmits(["click:streamKey"]);
+const emits = defineEmits<{
+  (e: "click:streamKey", key: string): void;
+}>();
 
 const videoRef = ref<HTMLVideoElement>();
 

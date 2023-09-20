@@ -161,13 +161,11 @@ const changeMute = async () => {
 // #########################################
 // ########## WebRTC P2P 연결 ##############
 // #########################################
+
 const myPeerConnection = new RTCPeerConnection({
   iceServers: [
     {
-      urls: [
-        "stun:testapi.kimjuchan97.xyz:3478",
-        "stun:testapi.kimjuchan97.xyz:3479",
-      ],
+      urls: ["stun:stun.juchandev.xyz:3478", "stun:stun.juchandev.xyz:3479"],
     },
   ],
 });
@@ -198,7 +196,16 @@ async function sendOffer() {
   });
 }
 const recivedOffer = (offer: RTCSessionDescriptionInit) => {
-  // console.log("recived offer", offer);
+  const msid = offer.sdp
+    ?.split("\n")
+    .filter((v) => v.includes("WMS"))[0]
+    .split("WMS")[1]
+    .trim();
+  // socket_ID 받아와서 msid와 같이 관리
+  // socket_ID가 나가면 msid와 매칭되는 stream 제거
+  console.log("msid : ", msid);
+
+  console.log("recived offer", offer);
   if (!offer) return;
 
   if (offer.type === "offer") {
@@ -242,9 +249,12 @@ const recivedCandidate = (candidate: RTCIceCandidate) => {
 
 // # addStream
 const addStream = async (data: RTCTrackEvent) => {
-  console.log("addstream", data);
+  console.log("addStreamData", data);
   const stream = data.streams[0];
   peerUserStream.value = stream;
+  // console.log("addstream", stream);
+  // peerUserStream.value = new MediaStream();
+  // peerUserStream.value.addTrack(data.track);
 
   await nextTick();
   peerVideoRef.value!.volume = initVloume;

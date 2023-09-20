@@ -8,7 +8,7 @@ let playerflvPlayer: any;
 const isPlayer = ref(false);
 const liveLists = ref<string[]>([]);
 
-const onClickStreamVideo = (stream: any) => {
+const handlerStreamVideoKey = (stream: any) => {
   // @ts-ignore
   if (flvjs.isSupported()) {
     console.log("사용가능");
@@ -52,7 +52,7 @@ onMounted(() => {
     <template v-for="item in liveLists">
       <LiveServerVideo
         :streamName="item"
-        @click:stream-key="onClickStreamVideo"
+        @click:stream-key="handlerStreamVideoKey"
       />
     </template>
   </div>
