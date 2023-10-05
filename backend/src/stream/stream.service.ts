@@ -9,6 +9,7 @@ import {
   FSWatcher,
   ReadStream,
 } from 'fs';
+import { toBase64 } from 'openai/core';
 import { resolve, join } from 'path';
 
 @Injectable()
@@ -54,7 +55,7 @@ export class StreamService {
     );
   }
 
-  async getImage(res: Response) {
+  async getImageStream(res: Response) {
     const filePath = join(process.cwd(), 'uploads/pngegg.png');
 
     const file = createReadStream(resolve(filePath));
@@ -100,5 +101,27 @@ export class StreamService {
     this.oldLength = 0;
     this.wathResponse = null;
     return '중단';
+  }
+
+  async imageBybase64() {
+    const filePath = join(process.cwd(), 'uploads/pngegg.png');
+    const ext = 'png';
+    // src형식 `data:image/png;base64,{data}`
+    // data:파일형식;encoding-type,data
+
+    return new Promise((res, rej) => {
+      readFile(filePath, 'base64', (err, data) => {
+        if (err) {
+          rej('실패');
+        }
+        res({
+          data: `data:image/${ext};base64,${data}`,
+        });
+      });
+    });
+
+    // reafileSync 동기식
+    // const data = readFileSync(filePath, 'base64');
+    // return { data };
   }
 }

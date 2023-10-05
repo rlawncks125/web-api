@@ -23,7 +23,7 @@ export class StreamController {
 
   @Get('image')
   getImage(@Res() response: Response) {
-    return this.streamService.getImage(response);
+    return this.streamService.getImageStream(response);
   }
 
   @Get('watch')
@@ -50,5 +50,10 @@ export class StreamController {
     }, 2000);
 
     return subject.pipe(map((data) => ({ data })));
+  }
+
+  @Get('noStream/image/base64')
+  async imageByBase64() {
+    return this.streamService.imageBybase64();
   }
 }

@@ -1,7 +1,15 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { onMounted, ref } from "vue";
 import { RouterLink, RouterView } from "vue-router";
 import * as Socket from "@/api/socket";
+
+const imageRef = ref();
+
+const getImage = async () => {
+  fetch("/api/stream/noStream/image/base64")
+    .then((res) => res.json())
+    .then(({ data }) => (imageRef.value.src = data));
+};
 
 onMounted(() => {
   Socket.init();
@@ -30,9 +38,16 @@ onMounted(() => {
         <RouterLink to="/permission">Permission</RouterLink>
       </nav>
     </div>
+    <div>
+      <h2>image baes64 redner</h2>
+      <div>
+        <button @click="getImage">Get Image</button>
+        <img ref="imageRef" alt="불러온 이미지" />
+      </div>
+    </div>
   </header>
 
-  <RouterView />
+  <RouterView :key="$route.fullPath" />
 </template>
 
 <style scoped></style>

@@ -39,7 +39,8 @@ const onClickCallChatGPT = () => {
   const pushPrompt: Prompt[] = [
     {
       role: "system",
-      content: concept.value || "당신은 조수입니다.",
+      // content: concept.value || "당신은 조수입니다.",
+      content: concept.value || "",
     },
     ...selectPrompt,
     newPrompt[0],
