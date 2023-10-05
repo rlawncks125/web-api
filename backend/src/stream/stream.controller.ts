@@ -1,4 +1,4 @@
-import { Controller, Get, Res, Sse } from '@nestjs/common';
+import { Body, Controller, Get, Post, Res, Sse } from '@nestjs/common';
 import { Response } from 'express';
 import { StreamService } from './stream.service';
 import { Observable, Subject, interval, map } from 'rxjs';
@@ -55,5 +55,10 @@ export class StreamController {
   @Get('noStream/image/base64')
   async imageByBase64() {
     return this.streamService.imageBybase64();
+  }
+
+  @Post('noStream/image/writebase64')
+  async writeImage(@Body() { data }: { data: string }) {
+    return this.streamService.wirteFileByBase64Image(data);
   }
 }

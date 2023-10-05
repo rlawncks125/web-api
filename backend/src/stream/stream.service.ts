@@ -8,6 +8,7 @@ import {
   watch,
   FSWatcher,
   ReadStream,
+  writeFile,
 } from 'fs';
 import { toBase64 } from 'openai/core';
 import { resolve, join } from 'path';
@@ -106,7 +107,7 @@ export class StreamService {
   async imageBybase64() {
     const filePath = join(process.cwd(), 'uploads/pngegg.png');
     const ext = 'png';
-    // src형식 `data:image/png;base64,{data}`
+    // src형식 `data:image/png;base64,{base64-string}`
     // data:파일형식;encoding-type,data
 
     return new Promise((res, rej) => {
@@ -123,5 +124,29 @@ export class StreamService {
     // reafileSync 동기식
     // const data = readFileSync(filePath, 'base64');
     // return { data };
+  }
+
+  async wirteFileByBase64Image(imageData: string) {
+    new Date(Date.now()).toISOString();
+    const today = new Date(Date.now()).toISOString().split('T')[0];
+    const time = Date.now();
+
+    const fileName = `테스트-${today}-${time}`;
+    const filePath = join(process.cwd(), `uploads/${fileName}.png`);
+
+    const base64String = imageData.split(';base64').pop();
+
+    return new Promise((res, rej) => {
+      writeFile(filePath, base64String, { encoding: 'base64' }, (err) => {
+        rej({
+          status: 'error',
+          err,
+        });
+      });
+
+      res({
+        status: 'success',
+      });
+    });
   }
 }
