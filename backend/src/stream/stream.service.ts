@@ -134,6 +134,8 @@ export class StreamService {
     const fileName = `테스트-${today}-${time}`;
     const filePath = join(process.cwd(), `uploads/${fileName}.png`);
 
+    // data:image/png;base64,{base64-string} 형식일떄
+    // base64 데이터 추출
     const base64String = imageData.split(';base64').pop();
 
     return new Promise((res, rej) => {
