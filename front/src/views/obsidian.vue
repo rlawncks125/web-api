@@ -14,6 +14,9 @@ const path = route.query.path || "출력파일";
           >export-obsidian-test</RouterLink
         >
         <RouterLink to="/obsidian?path=출력파일">출력파일</RouterLink>
+        <RouterLink to="/obsidian?path=출력-테스트-파일"
+          >출력-테스트-파일</RouterLink
+        >
       </div>
     </div>
 

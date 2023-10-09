@@ -26,3 +26,9 @@ coverage
 *.njsproj
 *.sln
 *.sw?
+
+
+public/export-obsidian-test
+public/lib
+public/출력파일
+public/출력-테스트-파일
