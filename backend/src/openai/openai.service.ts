@@ -47,15 +47,16 @@ export class OpenaiService {
 
     // 파일 저장
     const buf = await fetch(url).then(res => res.arrayBuffer())
-    const base64String = Buffer.from(buf).toString("base64");
-    this.wirteFileByBase64Image(base64String)
-        
-    
+    this.wirteFileByImageArrayBuffer(buf)
 
     res.send(url);
   }
 
-  async wirteFileByBase64Image(base64: string) {
+  async wirteFileByImageArrayBuffer(buf: ArrayBuffer) {
+    // 변환
+    const base64String = Buffer.from(buf).toString("base64");
+
+    
     new Date(Date.now()).toISOString();
     const today = new Date(Date.now()).toISOString().split('T')[0];
     const time = Date.now();
@@ -63,12 +64,9 @@ export class OpenaiService {
     const fileName = `Dalle-2-${today}-${time}`;
     const filePath = join(process.cwd(), `uploads/${fileName}.png`);
 
-    // data:image/png;base64,{base64-string} 형식일떄
-    // base64 데이터 추출
- 
 
     return new Promise((res, rej) => {
-      writeFile(filePath, base64, { encoding: 'base64' }, (err) => {
+      writeFile(filePath, base64String, { encoding: 'base64' }, (err) => {
         rej({
           status: 'error',
           err,
