@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
+import { uint8ArrayToBase64 } from "@/utils/fomat";
 
 const textBuffer = ref("");
 const videoRef = ref<HTMLVideoElement>();
@@ -62,6 +63,8 @@ const dataToByline = (data: string) => {
 
 // "https://res.cloudinary.com/dhdq4v4ar/image/upload/v1675403830/back-Portfolio/ixz0pvy7zqtdugwyh0u6.jpg"
 const getImage = () => {
+  // 굳이 <image src='주소'/>받는 방식이 stream 방식이므로
+  // 모두 다받고 렌더링할때 쓰면될거같음
   fetch("api/stream/image")
     .then((res) => res.body)
     .then((body) => {
@@ -78,6 +81,23 @@ const getImage = () => {
                 return;
               }
               // 데이터 조각을 새로운 스트림(새로 만드는 커스텀 스트림)에 넣는다.
+              // console.log(value);
+
+              // ###########################################
+              // 넘겨받은 데이터를 추가하여
+              // data:image/png;base64,${imageData} 로
+              // 이미지 데이터 랜더링 할떄
+              // 작동 안된 조건 ( 빈이미지 발생 )
+              // 1. 요청이 많으면 에러 발생
+              // 2. 사진 크기가 크면 에러 발생
+              //
+              // ###########################################
+              // const base64String = uint8ArrayToBase64(value);
+              // imageData += base64String;
+              // imageRef.value!.src = `data:image/png;base64,${imageData}`;
+              // console.log(imageData);
+              // ############################################
+
               controller.enqueue(value);
               return pump();
             });
@@ -97,6 +117,13 @@ onMounted(() => {});
 
 <template>
   <div>stream APi</div>
+  <div>
+    <div>
+      <img ref="imageRef" />
+    </div>
+    <button @click="getImage">이미지 불러오기</button>
+  </div>
+  <img src="api/stream/image" alt="" />
   <button
     class="border-2 p-2 bg-gray-400 hover:bg-gray-600 text-white"
     @click="getTextStream"
@@ -113,7 +140,7 @@ onMounted(() => {});
   <video ref="videoRef" controls>
     <source src="api/stream/video" type="video/mp4" />
   </video>
-  <img src="api/stream/image" alt="" />
+
   <hr />
   <h2>File Modify Watch ( 수정된 파일 내용 감지)</h2>
   <div class="border flex gap-4">
@@ -123,12 +150,6 @@ onMounted(() => {});
   <div class="border mt-4">
     <h2>변경된 데이터 :</h2>
     <p v-for="data in dataToByline(fileWatchArray)" v-html="data"></p>
-  </div>
-  <div>
-    <button @click="getImage">이미지 불러오기</button>
-    <div>
-      <img ref="imageRef" />
-    </div>
   </div>
 </template>
 

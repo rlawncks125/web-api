@@ -12,6 +12,9 @@ import {
 } from 'fs';
 import { toBase64 } from 'openai/core';
 import { resolve, join } from 'path';
+import { pipeline } from 'stream';
+
+import * as zlib from 'zlib';
 
 @Injectable()
 export class StreamService {
@@ -57,11 +60,55 @@ export class StreamService {
   }
 
   async getImageStream(res: Response) {
-    const filePath = join(process.cwd(), 'uploads/pngegg.png');
+    const filePath = join(process.cwd(), 'uploads/fgpY2aTTKwt_D8V4T-CLa.png');
 
     const file = createReadStream(resolve(filePath));
     res.header('Content-Type', 'image/png');
-    file.pipe(res);
+
+    // ReadStream 읽는 방법
+
+    // ####################################
+    // 공통 이벤트 핸들러
+    // ####################################
+    file.on('error', () => {
+      console.log('Image Stream Error');
+      res.end();
+    });
+    file.on('close', () => {
+      console.log('전송을 닫음 Close');
+    });
+    file.on('end', () => {
+      console.log('Image 전송 끝');
+      res.end();
+    });
+
+    // ######################################
+    // 1. on('readable') 방법
+    // Stream 방식으로 끊어서 데이터를 보냄
+    // ######################################
+    file.on('readable', () => {
+      let chunk;
+      // read(number? : 한번에 가져오는 바이트 값 제한)
+      while ((chunk = file.read())) {
+        console.log('데이터 전송중');
+        res.write(chunk);
+      }
+    });
+
+    // ######################################
+    // 2.on('data') 방법
+    // 데이터를 모두 읽으면 보냄
+    // ######################################
+    // file.on('data', (chunk) => {
+    //   res.write(chunk);
+    // });
+
+    // ######################################
+    // 3.Pipe() 방법
+    // 데이터를 모두 읽으면 보내고
+    // 끝나면 알아서 종료까지함
+    // ######################################
+    // file.pipe(res);
   }
 
   async chageFileWatch(res: Response) {
