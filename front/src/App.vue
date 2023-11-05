@@ -39,6 +39,7 @@ onMounted(() => {
       </nav>
     </div>
     <div>
+      <h2>2번째 태그 입니다. Docker 입니다.</h2>
       <h2>image baes64 redner</h2>
       <div>
         <button @click="getImage">Get Image</button>
