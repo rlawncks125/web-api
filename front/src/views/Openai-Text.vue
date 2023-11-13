@@ -7,9 +7,27 @@ import { storeToRefs } from "pinia";
 
 import { useOpenaiCache, type Prompt } from "@/stores/openai-cache";
 
+enum OpenaiTextVersionEnums {
+  "gpt-4" = "gpt-4",
+  "gpt-4-0314" = "gpt-4-0314",
+  "gpt-4-0613" = "gpt-4-0613",
+  "gpt-4-32k" = "gpt-4-32k",
+  "gpt-4-32k-0314" = "gpt-4-32k-0314",
+  "gpt-4-32k-0613" = "gpt-4-32k-0613",
+  "gpt-3.5-turbo" = "gpt-3.5-turbo",
+  "gpt-3.5-turbo-16k" = "gpt-3.5-turbo-16k",
+  "gpt-3.5-turbo-0301" = "gpt-3.5-turbo-0301",
+  "gpt-3.5-turbo-0613" = "gpt-3.5-turbo-0613",
+  "gpt-3.5-turbo-16k-0613" = "gpt-3.5-turbo-16k-0613",
+}
+type OpenaiTextVersion = keyof typeof OpenaiTextVersionEnums | "";
+
 const openaiText = ref("");
 const openaiTextResult = ref("");
-const gptModel = ref("gpt-3.5-turbo");
+const gptModel = ref<OpenaiTextVersion>(
+  OpenaiTextVersionEnums["gpt-3.5-turbo"]
+);
+
 const isStream = ref(false);
 
 const bottomEndRef = ref<HTMLElement>();
@@ -162,8 +180,9 @@ onMounted(() => {});
       class="w-[full] h-[15rem] mx-auto fixed bottom-0 left-0 right-0 flex flex-col bg-white border-t-2 border-black"
     >
       <select v-model="gptModel" class="border-b-2 border-black">
-        <option value="gpt-4">gpt-4</option>
-        <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+        <option v-for="(key, value) in OpenaiTextVersionEnums" :value="key">
+          {{ value }}
+        </option>
       </select>
 
       <div class="w-full flex justify-start">

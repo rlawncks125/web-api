@@ -90,7 +90,7 @@ export class StreamService {
       let chunk;
       // read(number? : 한번에 가져오는 바이트 값 제한)
       while ((chunk = file.read())) {
-        console.log('데이터 전송중');
+        // console.log('데이터 전송중');
         res.write(chunk);
       }
     });
