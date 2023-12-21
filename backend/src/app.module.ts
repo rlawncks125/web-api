@@ -10,6 +10,7 @@ import { StreamModule } from './stream/stream.module';
 import { CookieModule } from './cookie/cookie.module';
 import { OpenaiModule } from './openai/openai.module';
 import { MediaServerModule } from './media-server/media-server.module';
+import { OllamaModule } from './ollama/ollama.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { MediaServerModule } from './media-server/media-server.module';
     CookieModule,
     OpenaiModule,
     MediaServerModule,
+    OllamaModule,
   ],
   controllers: [AppController],
   providers: [AppService],
